@@ -1,0 +1,22 @@
+name: ASE389
+channels:
+  - conda-forge
+dependencies:
+  - pinocchio=2.5.5
+  - python=3.9.1
+  - pip:
+      - certifi==2020.12.5
+      - conda-env-export
+      - imageio==2.9.0
+      - ipdb==0.13.4
+      - matplotlib==3.3.4
+      - meshcat==0.0.19
+      - opencv-python==4.5.1.48
+      - pybullet==3.0.8
+      - pynput==1.7.3
+      - qpsolvers==1.5
+      - scipy==1.6.0
+      - tqdm==4.59.0
+      - wheel==0.36.2
+      - yapf==0.30.0
+prefix: /opt/anaconda3/envs/ASE389
