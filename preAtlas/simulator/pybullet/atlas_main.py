@@ -85,28 +85,19 @@ if __name__ == "__main__":
     FURNITURES = {}
     OBJECTS = {}
     assets = {}
-
-    #assets['ground'] = p.get_ground()
     mass = 0
-
-    idColWall = p.createCollisionShape(p.GEOM_PLANE)
-    assets['walls'] = [ p.createMultiBody(mass, idColWall, -1, [0.5 * FIELD_RANGE[0],    + 0.5*FIELD_RANGE[1] + 0.2, 1.0], [ 0.707, 0, 0,  0.707]),
-                        p.createMultiBody(mass, idColWall, -1, [0.5 * FIELD_RANGE[0],    - 0.5*FIELD_RANGE[1] - 0.2, 1.0], [ 0.707, 0, 0, -0.707]),
-                        p.createMultiBody(mass, idColWall, -1, [0.0,                       0.0,                      2.0], [     1, 0, 0,  0])]
-
-    #p.changeVisualShape(assets['ground'], -1, textureUniqueId=p.loadTexture("textures/carpet.png"))
-    p.changeVisualShape(planeId, -1, textureUniqueId=p.loadTexture("data1/textures/carpet.png"), rgbaColor=(0.8,0.7,0.8,1.0))
-    p.changeVisualShape(assets['walls'][0], -1, textureUniqueId=p.loadTexture("data1/textures/wall.png"), rgbaColor=(0.8, 0.7, 0.8, 1.0))
-    p.changeVisualShape(assets['walls'][1], -1, textureUniqueId=p.loadTexture("data1/textures/wall.png"), rgbaColor=(0.8, 0.7, 0.8, 1.0))
-    p.changeVisualShape(assets['walls'][2], -1, textureUniqueId=p.loadTexture("data1/textures/wall.png"), rgbaColor=(0.6, 0.7, 0.9, 1.0))
-
-    assets['people'] = []
-    assets['furnitures'] = []
-    assets['objects'] = []   
-
     setup_obstacles = {}
+    p.changeVisualShape(planeId, -1, textureUniqueId=p.loadTexture("data1/textures/carpet.png"), rgbaColor=(0.8,0.7,0.8,1.0))
+    setup_obstacles = environments.PerceptionWrapper._generate_obstacle_profiles(p,10,10,10,50,2)
+    assets = environments.PerceptionWrapper._set_world(p,setup_obstacles)
 
+    chairId = p.loadURDF(cwd + "/data1/assets/furnitures/chair_1/model.urdf", [2.5, 0, 0])
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
+        robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
+        SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
 
+    
     #####################################################################################
 
     # Initial Config
@@ -138,7 +129,7 @@ if __name__ == "__main__":
         # Set up camera position and orientation relative to the robot
         camera_distance = 3  # distance from the robot
         camera_yaw = -90  # camera's yaw angle (around the vertical axis)
-        camera_pitch = 30  # camera's pitch angle (around the horizontal axis)
+        camera_pitch = 45  # camera's pitch angle (around the horizontal axis)
         camera_target_position = p.getBasePositionAndOrientation(robot)[0]  # target position is the robot's base position
         #camera_target_position[2] += 1  # offset the camera's height above the robot
         camera_orientation = p.getQuaternionFromEuler([camera_pitch, camera_yaw, 0])  # camera's orientation (in quaternion)

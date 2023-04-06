@@ -75,7 +75,7 @@ class WalkingConfig(object):
     T_ADDITIONAL_INI_TRANS = 0.  # sec
     T_CONTACT_TRANS = 0.45
     T_SWING = 0.75
-    PERCENTAGE_SETTLE = 0.9
+    PERCENTAGE_SETTLE = 0.9 #originally 0.9
     ALPHA_DS = 0.5
 
     NOMINAL_FOOTWIDTH = 0.25
