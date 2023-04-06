@@ -7,6 +7,7 @@ from collections import OrderedDict
 import copy
 import signal
 import shutil
+import environments
 
 import pybullet as p
 import numpy as np
@@ -72,11 +73,41 @@ if __name__ == "__main__":
                        SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
                        SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT)
 
-    p.loadURDF(cwd + "/robot_model/ground/plane.urdf", [0, 0, 0])
+    planeId = p.loadURDF(cwd + "/robot_model/ground/plane.urdf", [0, 0, 0])
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
         robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
         SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
+    
+    #######################################################################
+    
+    FIELD_RANGE = [50, 3]
+    FURNITURES = {}
+    OBJECTS = {}
+    assets = {}
+
+    #assets['ground'] = p.get_ground()
+    mass = 0
+
+    idColWall = p.createCollisionShape(p.GEOM_PLANE)
+    assets['walls'] = [ p.createMultiBody(mass, idColWall, -1, [0.5 * FIELD_RANGE[0],    + 0.5*FIELD_RANGE[1] + 0.2, 1.0], [ 0.707, 0, 0,  0.707]),
+                        p.createMultiBody(mass, idColWall, -1, [0.5 * FIELD_RANGE[0],    - 0.5*FIELD_RANGE[1] - 0.2, 1.0], [ 0.707, 0, 0, -0.707]),
+                        p.createMultiBody(mass, idColWall, -1, [0.0,                       0.0,                      2.0], [     1, 0, 0,  0])]
+
+    #p.changeVisualShape(assets['ground'], -1, textureUniqueId=p.loadTexture("textures/carpet.png"))
+    p.changeVisualShape(planeId, -1, textureUniqueId=p.loadTexture("data1/textures/carpet.png"), rgbaColor=(0.8,0.7,0.8,1.0))
+    p.changeVisualShape(assets['walls'][0], -1, textureUniqueId=p.loadTexture("data1/textures/wall.png"), rgbaColor=(0.8, 0.7, 0.8, 1.0))
+    p.changeVisualShape(assets['walls'][1], -1, textureUniqueId=p.loadTexture("data1/textures/wall.png"), rgbaColor=(0.8, 0.7, 0.8, 1.0))
+    p.changeVisualShape(assets['walls'][2], -1, textureUniqueId=p.loadTexture("data1/textures/wall.png"), rgbaColor=(0.6, 0.7, 0.9, 1.0))
+
+    assets['people'] = []
+    assets['furnitures'] = []
+    assets['objects'] = []   
+
+    setup_obstacles = {}
+
+
+    #####################################################################################
 
     # Initial Config
     set_initial_config(robot, joint_id)
