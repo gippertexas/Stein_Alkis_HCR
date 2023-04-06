@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<robot name="Black_Decker_CM2035B_12Cup_Thermal_Coffeemaker">
+
+  <link name="base">
+
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+
+    <visual>
+      <geometry>
+        <mesh filename ="model.obj"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <geometry>
+        <mesh filename ="model.obj"/>
+      </geometry>
+    </collision>
+
+  </link>
+  
+</robot>

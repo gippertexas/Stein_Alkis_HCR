@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<robot name="a31ef3a8c70b789b93f0194265a9746c">
+
+  <link name="base">
+
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+
+    <visual>
+      <origin rpy="3.14159 0 0" xyz="0 0 0.05"/>
+      <geometry>
+        <mesh filename ="models/model_normalized.obj" scale="1 1 1"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin rpy="3.14159 0 0" xyz="0 0 0.05"/>
+      <geometry>
+        <mesh filename ="models/model_normalized.obj" scale="1 1 1"/>
+      </geometry>
+    </collision>
+
+  </link>
+  
+</robot>

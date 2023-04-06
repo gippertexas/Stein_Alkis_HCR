@@ -1,0 +1,399 @@
+<?xml version="1.0" ?>
+
+<robot name="dumpUrdf">
+
+  <material name="white">
+    <color rgba="1.0 1.0 1.0 1"/>
+  </material>
+
+  <material name="silver">
+    <color rgba="0.75 0.75 0.75 1"/>
+  </material>
+
+  <material name="gray">
+    <color rgba="0.5 0.5 0.5 1"/>
+  </material>
+
+  <material name="black">
+    <color rgba="0.0 0.0 0.0 1"/>
+  </material>
+
+	<link name="base" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0 0 0.250000" />
+			 <mass value = "150." />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<collision>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.00000 0.750000" />
+			<geometry>
+				<cylinder length="1.500000" radius="0.250000"/>
+			</geometry>
+		</collision>
+		<visual>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.00000 -0.030000" />
+			<geometry>
+				<sphere radius="0.020000"/>
+			</geometry>
+		</visual>
+    <contact>
+      <friction_anchor/>
+      <stiffness value="30000.0"/>
+      <damping value="1000.0"/>
+      <spinning_friction value="0.0"/>
+      <lateral_friction value="0.0"/>
+    </contact>
+
+	</link>
+
+	<link name="root" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.040000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.040000 0.000000" />
+			<geometry>
+				<sphere radius = "0.090000" />
+			</geometry>
+      <material name="black"/>
+		</visual>
+	</link>
+
+	<link name="chest" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.120000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.120000 0.000000" />
+			<geometry>
+				<sphere radius = "0.110000" />
+			</geometry>
+      <material name="black"/>
+		</visual>
+		<visual>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.04000 0.000000" />
+			<geometry>
+				<sphere radius = "0.060000" />
+			</geometry>
+      <material name="black"/>
+		</visual>
+
+	</link>
+
+	<link name="neck" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.135000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.135000 0.000000" />
+			<geometry>
+				<sphere radius = "0.102500" />
+			</geometry>
+      <material name="white"/>
+		</visual>
+	</link>
+
+	<link name="right_hip" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.210000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "-1.570796 0 0" xyz = "0.000000 -0.210000 0.000000" />
+			<geometry>
+				<capsule length="0.300000" radius="0.044000"/>
+			</geometry>
+      <material name="gray"/>
+		</visual>
+	</link>
+
+	<link name="right_knee" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.200000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "-1.570796 0 0" xyz = "0.000000 -0.200000 0.000000" />
+			<geometry>
+				<capsule length="0.370000" radius="0.050000"/>
+			</geometry>
+      <material name="silver"/>
+		</visual>
+	</link>
+
+	<link name="right_ankle" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.045000 -0.022500 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "0 0 0" xyz = "0.045000 -0.022500 0.000000" />
+			<geometry>
+				<box size="0.177000 0.055000 0.090000" />
+			</geometry>
+      <material name="white"/>
+		</visual>
+	</link>
+
+	<link name="right_shoulder" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.140000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "-1.570796 0 0" xyz = "0.000000 -0.140000 0.000000" />
+			<geometry>
+				<capsule length="0.180000" radius="0.045000"/>
+			</geometry>
+      <material name="gray"/>
+		</visual>
+	</link>
+
+	<link name="right_elbow" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.120000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "-1.570796 0 0" xyz = "0.000000 -0.120000 0.000000" />
+			<geometry>
+				<capsule length="0.135000" radius="0.040000"/>
+			</geometry>
+      <material name="silver"/>
+		</visual>
+	</link>
+
+	<link name="right_wrist" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.000000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.000000 0.000000" />
+			<geometry>
+				<sphere radius = "0.040000" />
+			</geometry>
+      <material name="white"/>
+		</visual>
+	</link>
+
+	<link name="left_hip" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.210000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "-1.570796 0 0" xyz = "0.000000 -0.210000 0.000000" />
+			<geometry>
+				<capsule length="0.300000" radius="0.055000"/>
+			</geometry>
+      <material name="gray"/>
+		</visual>
+	</link>
+
+	<link name="left_knee" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.200000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "-1.570796 0 0" xyz = "0.000000 -0.200000 0.000000" />
+			<geometry>
+				<capsule length="0.310000" radius="0.050000"/>
+			</geometry>
+      <material name="silver"/>
+		</visual>
+	</link>
+
+	<link name="left_ankle" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.045000 -0.022500 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "0 0 0" xyz = "0.045000 -0.022500 0.000000" />
+			<geometry>
+				<box size="0.177000 0.055000 0.090000" />
+			</geometry>
+      <material name="white"/>
+		</visual>
+	</link>
+
+	<link name="left_shoulder" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.140000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "-1.570796 0 0" xyz = "0.000000 -0.140000 0.000000" />
+			<geometry>
+				<capsule length="0.180000" radius="0.045000"/>
+			</geometry>
+      <material name="gray"/>
+		</visual>
+	</link>
+
+	<link name="left_elbow" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.120000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "-1.570796 0 0" xyz = "0.000000 -0.120000 0.000000" />
+			<geometry>
+				<capsule length="0.135000" radius="0.040000"/>
+			</geometry>
+      <material name="silver"/>
+		</visual>
+	</link>
+
+	<link name="left_wrist" >
+		<inertial>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.000000 0.000000" />
+			 <mass value = "0.10" />
+			<inertia ixx = "0" ixy = "0" ixz = "0" iyy = "0" iyz = "0" izz = "0" />
+		</inertial>
+		<visual>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.000000 0.000000" />
+			<geometry>
+				<sphere radius = "0.040000" />
+			</geometry>
+      <material name="white"/>
+		</visual>
+	</link>
+
+
+
+	<joint name="root" type="fixed" >
+		<parent link = "base" />
+		<child link="root" />
+				<origin rpy = "1.570796 0 0" xyz = "0.000000 0.00000 0.90000" />
+	</joint>
+
+	<joint name="chest" type="revolute" >
+		<parent link="root" />
+		<child link="chest" />
+		<limit effort="1000.0" lower="-1.57" upper="1.57" velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.236151 0.000000" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="neck" type="revolute" >
+		<parent link="chest" />
+		<child link="neck" />
+		<limit effort="1000.0" lower="-1.57" upper="1.57" velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.223894 0.000000" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="right_hip" type="revolute" >
+		<parent link="root" />
+		<child link="right_hip" />
+		<limit effort="1000.0" lower="-1.57" upper="1.57" velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.000000 0.084887" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="right_knee" type="revolute" >
+		<parent link="right_hip" />
+		<child link="right_knee" />
+		 <limit effort="1000.0" lower="-3.14" upper="0." velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.421546 0.000000" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="right_ankle" type="revolute" >
+		<parent link="right_knee" />
+		<child link="right_ankle" />
+		<limit effort="1000.0" lower="0" upper="3.14" velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.40987 0.000000" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="right_shoulder" type="revolute" >
+		<parent link="chest" />
+		<child link="right_shoulder" />
+		<limit effort="1000.0" lower="-1.57" upper="1.57" velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "-0.02405 0.2035 0.18311" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="right_elbow" type="revolute" >
+		<parent link="right_shoulder" />
+		<child link="right_elbow" />
+		<limit effort="1000.0" lower="0" upper="3.14" velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.274788 0.000000" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="right_wrist" type="fixed" >
+		<parent link="right_elbow" />
+		<child link="right_wrist" />
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.258947 0.000000" />
+	</joint>
+
+	<joint name="left_hip" type="revolute" >
+		<parent link="root" />
+		<child link="left_hip" />
+		<limit effort="1000.0" lower="-1.57" upper="1.57" velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "0.000000 0.000000 -0.084887" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="left_knee" type="revolute" >
+		<parent link="left_hip" />
+		<child link="left_knee" />
+		<limit effort="1000.0" lower="-3.14" upper="0." velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.421546 0.000000" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="left_ankle" type="revolute" >
+		<parent link="left_knee" />
+		<child link="left_ankle" />
+		<limit effort="1000.0" lower="0" upper="3.14" velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.40987 0.000000" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+
+	<joint name="left_shoulder" type="revolute" >
+		<parent link="chest" />
+		<child link="left_shoulder" />
+		<limit effort="1000.0" lower="-1.57" upper="1.57" velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "-0.02405 0.2035 -0.18311" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="left_elbow" type="revolute" >
+		<parent link="left_shoulder" />
+		<child link="left_elbow" />
+		<limit effort="1000.0" lower="0" upper="3.14" velocity="0.5"/>
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.274788 0.000000" />
+		<axis xyz = "0.000000 0.000000 1.000000" />
+	</joint>
+
+	<joint name="left_wrist" type="fixed" >
+		<parent link="left_elbow" />
+		<child link="left_wrist" />
+				<origin rpy = "0 0 0" xyz = "0.000000 -0.258947 0.000000" />
+	</joint>
+
+</robot>
