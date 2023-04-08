@@ -240,7 +240,7 @@ class DCMTrajectoryManager(object):
 
     def turn_right(self):
         self._reset_idx_and_clear_footstep_list()
-        self._populate_turn(3, -self._nominal_turn_radians)
+        self._populate_turn(3, -0.5*self._nominal_turn_radians)
 
     def _populate_step_in_place(self, num_step, robot_side_first):
         self._update_starting_stance()

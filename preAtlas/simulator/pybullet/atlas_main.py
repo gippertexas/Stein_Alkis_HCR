@@ -8,6 +8,9 @@ import copy
 import signal
 import shutil
 import environments
+import argparse
+import yaml
+from robomimic.utils.file_utils import policy_from_checkpoint
 
 import pybullet as p
 import numpy as np
@@ -112,10 +115,30 @@ if __name__ == "__main__":
     # Construct Interface
     interface = AtlasInterface()
 
+
+    ############################################################################################
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--nav_policy", type=str, default="bcrnn",
+                    help="path for loading checkpoints, configuration and training logs. For example, --nav_policy=NAV_POLICY will load checkpoints at ./save/bc_checkpoints/NAV_POLICY.")
+    parser.add_argument("--config",type=str,default="deploy",
+                        help="path to a directory with the configuration files of simulation setup, etc. For example, --config=CONFIG will save checkpoints at ./config/CONFIG.")
+    args = parser.parse_args()
+    nav_policy = args.nav_policy
+    PATH_SICRIPT    = os.path.dirname(os.path.realpath(__file__))
+    PATH_ROOT   = os.path.dirname(PATH_SICRIPT)
+    SUBPATH = yaml.load(open(os.path.join(PATH_ROOT, 'path.yaml')), Loader=yaml.FullLoader)
+    PATH_CHECKPOINT_BC = os.path.join(PATH_ROOT, SUBPATH['BC Checkpoint'])
+    nav_path = "{}/{}/models/model_best_training.pth".format(PATH_CHECKPOINT_BC, nav_policy)
+    eval_policy = policy_from_checkpoint(ckpt_path=nav_path)[0]
+    print(eval_policy)
+
+    ##############################################################################################
+
     # Run Sim
     t = 0
     dt = SimConfig.CONTROLLER_DT
     count = 0
+
 
     while (1):
 
@@ -141,6 +164,21 @@ if __name__ == "__main__":
         lf_height = pybullet_util.get_link_iso(robot, link_id['l_sole'])[2, 3]
         sensor_data['b_rf_contact'] = True if rf_height <= 0.01 else False
         sensor_data['b_lf_contact'] = True if lf_height <= 0.01 else False
+
+        # ############################################################################################
+        # parser = argparse.ArgumentParser()
+        # parser.add_argument("--nav_policy", type=str, default="bcrnn",
+        #                 help="path for loading checkpoints, configuration and training logs. For example, --nav_policy=NAV_POLICY will load checkpoints at ./save/bc_checkpoints/NAV_POLICY.")
+        # args = parser.parse_args()
+        # nav_policy = args.nav_policy
+        # PATH_SICRIPT    = os.path.dirname(os.path.realpath(__file__))
+        # PATH_ROOT   = os.path.dirname(PATH_SICRIPT)
+        # SUBPATH = yaml.load(open(os.path.join(PATH_ROOT, 'path.yaml')), Loader=yaml.FullLoader)
+        # PATH_CHECKPOINT_BC = os.path.join(PATH_ROOT, SUBPATH['BC Checkpoint'])
+        # nav_path = "{}/{}/models/model_best_training.pth".format(PATH_CHECKPOINT_BC, nav_policy)
+        # eval_policy = policy_from_checkpoint(ckpt_path=nav_path)[0]
+
+        # ##############################################################################################
 
         # Get Keyboard Event
         keys = p.getKeyboardEvents()
