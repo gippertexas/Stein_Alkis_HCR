@@ -22,4 +22,5 @@ dependencies:
       - yapf==0.30.0
       - gym
       - robomimic
+      - cmake
 prefix: /opt/anaconda3/envs/ASE389
