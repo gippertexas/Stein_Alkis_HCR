@@ -1,0 +1,11 @@
+Device: cuda
+Episodes Per Evaluation: 5
+Max Steps: 10000000
+Note: None
+Project: Restore
+Save: act020606_original_1
+Seed: 4
+Steps Per Episode: 1800
+Steps Per Evaluation: 20000
+Steps Per Video: 100000
+Task: multiple
