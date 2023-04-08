@@ -22,6 +22,8 @@ from util import pybullet_util
 from util import util
 from util import liegroup
 
+DEG_TO_RAD = np.pi/180.
+RAD_TO_DEG = 180./np.pi
 
 def set_initial_config(robot, joint_id):
     # shoulder_x
@@ -116,7 +118,7 @@ if __name__ == "__main__":
     interface = AtlasInterface()
 
 
-    ############################################################################################
+    ############################################################################################ (create eval_policy)
     parser = argparse.ArgumentParser()
     parser.add_argument("--nav_policy", type=str, default="bcrnn",
                     help="path for loading checkpoints, configuration and training logs. For example, --nav_policy=NAV_POLICY will load checkpoints at ./save/bc_checkpoints/NAV_POLICY.")
@@ -131,6 +133,88 @@ if __name__ == "__main__":
     nav_path = "{}/{}/models/model_best_training.pth".format(PATH_CHECKPOINT_BC, nav_policy)
     eval_policy = policy_from_checkpoint(ckpt_path=nav_path)[0]
     print(eval_policy)
+
+    ######################################################################################### (get obs)
+    _view_agent = {'dist': 0.2,
+                            'offset': np.array([0.45, 0, 0.]),
+                            'roll' : 0. * DEG_TO_RAD,
+                            'yaw' : -90. * DEG_TO_RAD,
+                            'pitch': 0. * DEG_TO_RAD,
+                            'width': 212,
+                            'height': 120,
+                            'near': 0.1,
+                            'far': 100}
+
+    _view_bird = {'dist': 2.0,
+                            'offset': np.array([0.45, 0, 0]),
+                            'roll' : 0. * DEG_TO_RAD,
+                            'yaw' : -60. * DEG_TO_RAD,
+                            'pitch': -30 * DEG_TO_RAD,
+                            'width': 480,
+                            'height': 360,
+                            'near': 0.1,
+                            'far': 100}
+
+    _view_fpv = {'dist': 1.5,
+                            'offset': np.array([0.45, 0, 0]),
+                            'roll' : 0. * DEG_TO_RAD,
+                            'yaw' : -90. * DEG_TO_RAD,
+                            'pitch': -30 * DEG_TO_RAD,
+                            'width': 480,
+                            'height': 360,
+                            'near': 0.1,
+                            'far': 100}
+    position, orientation = p.getBasePositionAndOrientation(assets['agent'])
+    view_point, _ = p.env.pybullet_client.multiplyTransforms(position, orientation,_view_agent['offset'], [0, 0, 0, 1])
+    view_rpy = p.getEulerFromQuaternion(orientation)
+
+    view_matrix = p.computeViewMatrixFromYawPitchRoll(
+        cameraTargetPosition = view_point,
+        distance = _view_agent['dist'],
+        roll = RAD_TO_DEG * (view_rpy[0] + _view_agent['roll']),
+        pitch = RAD_TO_DEG * (view_rpy[1] + _view_agent['pitch']),
+        yaw = RAD_TO_DEG * (view_rpy[2] + _view_agent['yaw']),
+        upAxisIndex=2)
+    proj_matrix = p.computeProjectionMatrixFOV(
+        fov=60,
+        aspect=float(_view_agent['width']) / _view_agent['height'],
+        nearVal=_view_agent['near'],
+        farVal=_view_agent['far'])
+    (_, _, rgb, depth, _) = p.getCameraImage(
+        width=_view_agent['width'],
+        height=_view_agent['height'],
+        renderer=p.ER_TINY_RENDERER,
+        viewMatrix=view_matrix,
+        shadow=0,
+        projectionMatrix=proj_matrix)
+
+    _pixels = {}
+    _pixels['rgb'] = np.array(rgb)[:, :, 2::-1]
+    _pixels['depth'] = np.array((1-depth)*255, dtype=np.uint8)
+    rgbd = np.concatenate((_pixels['rgb'], np.sqrt(_pixels['depth'])[:, :, np.newaxis]), axis=2)/255.
+    # rgbd = np.concatenate((self._pixels['rgb'], np.sqrt(self._pixels['depth'])[:, :, np.newaxis]), axis=2)/255.
+
+    p.resetDebugVisualizerCamera( cameraDistance = _view_fpv['dist'],
+                                                            cameraTargetPosition = view_point,
+                                                            cameraPitch = RAD_TO_DEG * _view_fpv['pitch'],
+                                                            cameraYaw = RAD_TO_DEG * _view_fpv['yaw']
+                                                            )
+
+    _yaw = view_rpy[2]
+    
+    _nav_action = np.clip(action, [0, -1.0], [1., 1.0])
+    obs = {'rgbd': rgbd, 'yaw':_yaw, 'action': _nav_action}
+
+    ############################################################################################
+
+    # Update Navigation Controller
+    obs_dict = {
+    "agentview_rgb": 255.*np.transpose(obs["rgbd"][..., :3], (2, 0, 1)),
+    "agentview_depth": np.transpose(obs["rgbd"][..., 3:], (2, 0, 1)),
+    "yaw": np.array([obs["yaw"]])
+    }
+    action = eval_policy(obs_dict)
+    
 
     ##############################################################################################
 
