@@ -4,6 +4,7 @@ channels:
 dependencies:
   - pinocchio=2.5.5
   - python=3.9.1
+  - pip
   - pip:
       - certifi==2020.12.5
       - conda-env-export
@@ -19,4 +20,6 @@ dependencies:
       - tqdm==4.59.0
       - wheel==0.36.2
       - yapf==0.30.0
+      - gym
+      - robomimic
 prefix: /opt/anaconda3/envs/ASE389
