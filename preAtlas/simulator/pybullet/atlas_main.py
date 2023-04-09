@@ -96,11 +96,11 @@ if __name__ == "__main__":
     setup_obstacles = environments.PerceptionWrapper._generate_obstacle_profiles(p,10,10,10,50,2)
     assets = environments.PerceptionWrapper._set_world(p,setup_obstacles)
 
-    chairId = p.loadURDF(cwd + "/data1/assets/furnitures/chair_1/model.urdf", [2.5, 0, 0])
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
-    nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
-        robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
-        SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
+    # chairId = p.loadURDF(cwd + "/data1/assets/furnitures/chair_1/model.urdf", [2.5, 0, 0])
+    # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    # nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
+    #     robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
+    #     SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
 
     
     #####################################################################################
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     PATH_CHECKPOINT_BC = os.path.join(PATH_ROOT, SUBPATH['BC Checkpoint'])
     nav_path = "{}/{}/models/model_best_training.pth".format(PATH_CHECKPOINT_BC, nav_policy)
     eval_policy = policy_from_checkpoint(ckpt_path=nav_path)[0]
-    print(eval_policy)
+    # print(eval_policy)
 
     ######################################################################################### (get obs)
     _view_agent = {'dist': 0.2,
@@ -164,56 +164,11 @@ if __name__ == "__main__":
                             'height': 360,
                             'near': 0.1,
                             'far': 100}
-    position, orientation = p.getBasePositionAndOrientation(assets['agent'])
-    view_point, _ = p.env.pybullet_client.multiplyTransforms(position, orientation,_view_agent['offset'], [0, 0, 0, 1])
-    view_rpy = p.getEulerFromQuaternion(orientation)
-
-    view_matrix = p.computeViewMatrixFromYawPitchRoll(
-        cameraTargetPosition = view_point,
-        distance = _view_agent['dist'],
-        roll = RAD_TO_DEG * (view_rpy[0] + _view_agent['roll']),
-        pitch = RAD_TO_DEG * (view_rpy[1] + _view_agent['pitch']),
-        yaw = RAD_TO_DEG * (view_rpy[2] + _view_agent['yaw']),
-        upAxisIndex=2)
-    proj_matrix = p.computeProjectionMatrixFOV(
-        fov=60,
-        aspect=float(_view_agent['width']) / _view_agent['height'],
-        nearVal=_view_agent['near'],
-        farVal=_view_agent['far'])
-    (_, _, rgb, depth, _) = p.getCameraImage(
-        width=_view_agent['width'],
-        height=_view_agent['height'],
-        renderer=p.ER_TINY_RENDERER,
-        viewMatrix=view_matrix,
-        shadow=0,
-        projectionMatrix=proj_matrix)
-
-    _pixels = {}
-    _pixels['rgb'] = np.array(rgb)[:, :, 2::-1]
-    _pixels['depth'] = np.array((1-depth)*255, dtype=np.uint8)
-    rgbd = np.concatenate((_pixels['rgb'], np.sqrt(_pixels['depth'])[:, :, np.newaxis]), axis=2)/255.
-    # rgbd = np.concatenate((self._pixels['rgb'], np.sqrt(self._pixels['depth'])[:, :, np.newaxis]), axis=2)/255.
-
-    p.resetDebugVisualizerCamera( cameraDistance = _view_fpv['dist'],
-                                                            cameraTargetPosition = view_point,
-                                                            cameraPitch = RAD_TO_DEG * _view_fpv['pitch'],
-                                                            cameraYaw = RAD_TO_DEG * _view_fpv['yaw']
-                                                            )
-
-    _yaw = view_rpy[2]
     
-    _nav_action = np.clip(action, [0, -1.0], [1., 1.0])
-    obs = {'rgbd': rgbd, 'yaw':_yaw, 'action': _nav_action}
 
     ############################################################################################
 
-    # Update Navigation Controller
-    obs_dict = {
-    "agentview_rgb": 255.*np.transpose(obs["rgbd"][..., :3], (2, 0, 1)),
-    "agentview_depth": np.transpose(obs["rgbd"][..., 3:], (2, 0, 1)),
-    "yaw": np.array([obs["yaw"]])
-    }
-    action = eval_policy(obs_dict)
+    
     
 
     ##############################################################################################
@@ -222,7 +177,13 @@ if __name__ == "__main__":
     t = 0
     dt = SimConfig.CONTROLLER_DT
     count = 0
-
+    _nav_action = 0
+    camera_distance = 3  # distance from the robot
+    camera_yaw = -90  # camera's yaw angle (around the vertical axis)
+    camera_pitch = 45  # camera's pitch angle (around the horizontal axis)
+    camera_target_position = p.getBasePositionAndOrientation(robot)[0]  # target position is the robot's base position
+    #camera_target_position[2] += 1  # offset the camera's height above the robot
+    camera_orientation = p.getQuaternionFromEuler([camera_pitch, camera_yaw, 0])  # camera's orientation (in quaternion)
 
     while (1):
 
@@ -234,12 +195,7 @@ if __name__ == "__main__":
                                                     pos_basejoint_to_basecom,
                                                     rot_basejoint_to_basecom)
         # Set up camera position and orientation relative to the robot
-        camera_distance = 3  # distance from the robot
-        camera_yaw = -90  # camera's yaw angle (around the vertical axis)
-        camera_pitch = 45  # camera's pitch angle (around the horizontal axis)
-        camera_target_position = p.getBasePositionAndOrientation(robot)[0]  # target position is the robot's base position
-        #camera_target_position[2] += 1  # offset the camera's height above the robot
-        camera_orientation = p.getQuaternionFromEuler([camera_pitch, camera_yaw, 0])  # camera's orientation (in quaternion)
+        
 
         # Set the camera's position and orientation
         p.resetDebugVisualizerCamera(cameraDistance=camera_distance, cameraYaw=camera_yaw, cameraPitch=-camera_pitch, cameraTargetPosition=camera_target_position)
@@ -263,6 +219,62 @@ if __name__ == "__main__":
         # eval_policy = policy_from_checkpoint(ckpt_path=nav_path)[0]
 
         # ##############################################################################################
+
+        #==========================#   UPDATING FOR DEPTH SCANNING
+        position, orientation = p.getBasePositionAndOrientation(robot)
+        view_point, _ = p.multiplyTransforms(position, orientation,_view_agent['offset'], [0, 0, 0, 1])
+        view_rpy = p.getEulerFromQuaternion(orientation)
+
+        view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition = view_point,
+            distance = _view_agent['dist'],
+            roll = RAD_TO_DEG * (view_rpy[0] + _view_agent['roll']),
+            pitch = RAD_TO_DEG * (view_rpy[1] + _view_agent['pitch']),
+            yaw = RAD_TO_DEG * (view_rpy[2] + _view_agent['yaw']),
+            upAxisIndex=2)
+        proj_matrix = p.computeProjectionMatrixFOV(
+            fov=60,
+            aspect=float(_view_agent['width']) / _view_agent['height'],
+            nearVal=_view_agent['near'],
+            farVal=_view_agent['far'])
+        (_, _, rgb, depth, _) = p.getCameraImage(
+            width=_view_agent['width'],
+            height=_view_agent['height'],
+            renderer=p.ER_TINY_RENDERER,
+            viewMatrix=view_matrix,
+            shadow=0,
+            projectionMatrix=proj_matrix)
+
+        _pixels = {}
+        _pixels['rgb'] = np.array(rgb)[:, :, 2::-1]
+        _pixels['depth'] = np.array((1-depth)*255, dtype=np.uint8)
+        rgbd = np.concatenate((_pixels['rgb'], np.sqrt(_pixels['depth'])[:, :, np.newaxis]), axis=2)/255.
+        # rgbd = np.concatenate((self._pixels['rgb'], np.sqrt(self._pixels['depth'])[:, :, np.newaxis]), axis=2)/255.
+
+        # p.resetDebugVisualizerCamera( cameraDistance = _view_fpv['dist'],
+        #                                                         cameraTargetPosition = view_point,
+        #                                                         cameraPitch = RAD_TO_DEG * _view_fpv['pitch'],
+        #                                                         cameraYaw = RAD_TO_DEG * _view_fpv['yaw']
+        #                                                         )
+
+        _yaw = view_rpy[2]
+        # print("\nyaw",_yaw)
+        obs = {'rgbd': rgbd, 'yaw':_yaw, 'action': _nav_action}
+        obs_dict = {
+        "agentview_rgb": 255.*np.transpose(obs["rgbd"][..., :3], (2, 0, 1)),
+        "agentview_depth": np.transpose(obs["rgbd"][..., 3:], (2, 0, 1)),
+        "yaw": np.array([obs["yaw"]])
+        }
+        action = eval_policy(obs_dict)
+        
+        _nav_action = np.clip(action, [0, -1.0], [1., 1.0])
+        yaw_robot_cmd = action[1]
+        dist_robot_cmd = action[0]
+        # angle = np.arctan2(_nav_action[0],_nav_action[1])
+        print("\ndist robot command",dist_robot_cmd,"robot angle command",yaw_robot_cmd, "current yaw", _yaw)
+        # Update Navigation Controller
+        
+        
 
         # Get Keyboard Event
         keys = p.getKeyboardEvents()
