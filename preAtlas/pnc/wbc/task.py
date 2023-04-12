@@ -17,7 +17,10 @@ class Task(abc.ABC):
 
         self._kp = np.zeros(self._dim)
         self._kd = np.zeros(self._dim)
+        print(self._robot)
+        print(self._robot.n_q_dot)
         self._jacobian = np.zeros((self._dim, self._robot.n_q_dot))
+        # self._jacobian = np.zeros(self._dim)
         self._jacobian_dot_q_dot = np.zeros(self._dim)
 
         self._op_cmd = np.zeros(self._dim)
