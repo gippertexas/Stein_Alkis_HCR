@@ -26,7 +26,7 @@ from pnc.interface import Interface
 from pnc.control_architecture import ControlArchitecture
 from config.atlas_config import WalkingState
 from pnc.atlas_pnc.atlas_control_architecture import AtlasControlArchitecture
-
+from pnc.atlas_pnc.atlas_state_provider import AtlasStateProvider
 
 from config.atlas_config import SimConfig
 from pnc.atlas_pnc.atlas_interface import AtlasInterface
@@ -253,94 +253,85 @@ if __name__ == "__main__":
         lf_height = pybullet_util.get_link_iso(robot, link_id['l_sole'])[2, 3]
         sensor_data['b_rf_contact'] = True if rf_height <= 0.01 else False
         sensor_data['b_lf_contact'] = True if lf_height <= 0.01 else False
-        # if t%50==0:
+        
 
-        # # ############################################################################################
-        #     parser = argparse.ArgumentParser()
-        #     parser.add_argument("--nav_policy", type=str, default="bcrnn",
-        #                     help="path for loading checkpoints, configuration and training logs. For example, --nav_policy=NAV_POLICY will load checkpoints at ./save/bc_checkpoints/NAV_POLICY.")
-        #     args = parser.parse_args()
-        #     nav_policy = args.nav_policy
-        #     PATH_SICRIPT    = os.path.dirname(os.path.realpath(__file__))
-        #     PATH_ROOT   = os.path.dirname(PATH_SICRIPT)
-        #     SUBPATH = yaml.load(open(os.path.join(PATH_ROOT, 'path.yaml')), Loader=yaml.FullLoader)
-        #     PATH_CHECKPOINT_BC = os.path.join(PATH_ROOT, SUBPATH['BC Checkpoint'])
-        #     nav_path = "{}/{}/models/model_best_training.pth".format(PATH_CHECKPOINT_BC, nav_policy)
-        #     eval_policy = policy_from_checkpoint(ckpt_path=nav_path)[0]
+        # ############################################################################################
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--nav_policy", type=str, default="bcrnn",
+                        help="path for loading checkpoints, configuration and training logs. For example, --nav_policy=NAV_POLICY will load checkpoints at ./save/bc_checkpoints/NAV_POLICY.")
+        args = parser.parse_args()
+        nav_policy = args.nav_policy
+        PATH_SICRIPT    = os.path.dirname(os.path.realpath(__file__))
+        PATH_ROOT   = os.path.dirname(PATH_SICRIPT)
+        SUBPATH = yaml.load(open(os.path.join(PATH_ROOT, 'path.yaml')), Loader=yaml.FullLoader)
+        PATH_CHECKPOINT_BC = os.path.join(PATH_ROOT, SUBPATH['BC Checkpoint'])
+        nav_path = "{}/{}/models/model_best_training.pth".format(PATH_CHECKPOINT_BC, nav_policy)
+        eval_policy = policy_from_checkpoint(ckpt_path=nav_path)[0]
 
-        #     # ##############################################################################################
+        # ##############################################################################################
 
-        #     #==========================#   UPDATING FOR DEPTH SCANNING
-        #     position, orientation = p.getBasePositionAndOrientation(robot)
-        #     view_point, _ = p.multiplyTransforms(position, orientation,_view_agent['offset'], [0, 0, 0, 1])
-        #     view_rpy = p.getEulerFromQuaternion(orientation)
+        #==========================#   UPDATING FOR DEPTH SCANNING
+        position, orientation = p.getBasePositionAndOrientation(robot)
+        view_point, _ = p.multiplyTransforms(position, orientation,_view_agent['offset'], [0, 0, 0, 1])
+        view_rpy = p.getEulerFromQuaternion(orientation)
 
-        #     view_matrix = p.computeViewMatrixFromYawPitchRoll(
-        #         cameraTargetPosition = view_point,
-        #         distance = _view_agent['dist'],
-        #         roll = RAD_TO_DEG * (view_rpy[0] + _view_agent['roll']),
-        #         pitch = RAD_TO_DEG * (view_rpy[1] + _view_agent['pitch']),
-        #         yaw = RAD_TO_DEG * (view_rpy[2] + _view_agent['yaw']),
-        #         upAxisIndex=2)
-        #     proj_matrix = p.computeProjectionMatrixFOV(
-        #         fov=60,
-        #         aspect=float(_view_agent['width']) / _view_agent['height'],
-        #         nearVal=_view_agent['near'],
-        #         farVal=_view_agent['far'])
-        #     (_, _, rgb, depth, _) = p.getCameraImage(
-        #         width=_view_agent['width'],
-        #         height=_view_agent['height'],
-        #         renderer=p.ER_TINY_RENDERER,
-        #         viewMatrix=view_matrix,
-        #         shadow=0,
-        #         projectionMatrix=proj_matrix)
+        view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition = view_point,
+            distance = _view_agent['dist'],
+            roll = RAD_TO_DEG * (view_rpy[0] + _view_agent['roll']),
+            pitch = RAD_TO_DEG * (view_rpy[1] + _view_agent['pitch']),
+            yaw = RAD_TO_DEG * (view_rpy[2] + _view_agent['yaw']),
+            upAxisIndex=2)
+        proj_matrix = p.computeProjectionMatrixFOV(
+            fov=60,
+            aspect=float(_view_agent['width']) / _view_agent['height'],
+            nearVal=_view_agent['near'],
+            farVal=_view_agent['far'])
+        (_, _, rgb, depth, _) = p.getCameraImage(
+            width=_view_agent['width'],
+            height=_view_agent['height'],
+            renderer=p.ER_TINY_RENDERER,
+            viewMatrix=view_matrix,
+            shadow=0,
+            projectionMatrix=proj_matrix)
 
-        #     _pixels = {}
-        #     _pixels['rgb'] = np.array(rgb)[:, :, 2::-1]
-        #     _pixels['depth'] = np.array((1-depth)*255, dtype=np.uint8)
-        #     rgbd = np.concatenate((_pixels['rgb'], np.sqrt(_pixels['depth'])[:, :, np.newaxis]), axis=2)/255.
-            
-        #     _yaw = view_rpy[2]
-        #     # print("\nyaw",_yaw)
-        #     obs = {'rgbd': rgbd, 'yaw':_yaw, 'action': _nav_action}
-        #     obs_dict = {
-        #     "agentview_rgb": 255.*np.transpose(obs["rgbd"][..., :3], (2, 0, 1)),
-        #     "agentview_depth": np.transpose(obs["rgbd"][..., 3:], (2, 0, 1)),
-        #     "yaw": np.array([obs["yaw"]])
-        #     }
-        #     action = eval_policy(obs_dict)
-        #     # print(action)
-            
-        #     _nav_action = np.clip(action, [0, -1.0], [1., 1.0])
-        #     yaw_robot_cmd = action[1]
-        #     dist_robot_cmd = action[0]
-        #     turn_angle_radian = np.arctan2(_nav_action[1],_nav_action[0])
-        #     turn_angle = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
-        #     # print(turn_angle)
-        #     from pnc.robot_system.pinocchio_robot_system import PinocchioRobotSystem
-        #     _robot = PinocchioRobotSystem(
-        #         cwd + "/robot_model/atlas/atlas.urdf",
-        #         cwd + "/robot_model/atlas", False, PnCConfig.PRINT_ROBOT_INFO)
-        #     # print('robot',_robot)
-        #     taf_container = AtlasTaskForceContainer(_robot)
-        #     # _com_task = BasicTask(robot, "COM", 3, 'com', PnCConfig.SAVE_DATA)
-        #     # _pelvis_ori_task = BasicTask(robot, "LINK_ORI", 3, "pelvis_com",
-        #     #                               PnCConfig.SAVE_DATA)
-        #     turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
-        #     # print(turn_angle)
-        #     ctrl_arch = AtlasControlArchitecture(_robot)
-        #     if ctrl_arch.state == WalkingState.BALANCE:
-        #         print("hell yeah boi")
-            # if 
-            # if turn_angle<=-8:
-            #     turn_func.turn_right(turn_angle_radian)
-            #     interface.interrupt_logic.b_interrupt_button_nine = True
-                
-            # elif turn_angle>=8:
-            #     turn_func.turn_left(turn_angle_radian)
-            #     interface.interrupt_logic.b_interrupt_button_seven = True
-            # else:
-            #     interface.interrupt_logic.b_interrupt_button_eight = True
+        _pixels = {}
+        _pixels['rgb'] = np.array(rgb)[:, :, 2::-1]
+        _pixels['depth'] = np.array((1-depth)*255, dtype=np.uint8)
+        rgbd = np.concatenate((_pixels['rgb'], np.sqrt(_pixels['depth'])[:, :, np.newaxis]), axis=2)/255.
+        
+        _yaw = view_rpy[2]
+        # print("\nyaw",_yaw)
+        obs = {'rgbd': rgbd, 'yaw':_yaw, 'action': _nav_action}
+        obs_dict = {
+        "agentview_rgb": 255.*np.transpose(obs["rgbd"][..., :3], (2, 0, 1)),
+        "agentview_depth": np.transpose(obs["rgbd"][..., 3:], (2, 0, 1)),
+        "yaw": np.array([obs["yaw"]])
+        }
+        action = eval_policy(obs_dict)
+        # print(action)
+        
+        _nav_action = np.clip(action, [0, -1.0], [1., 1.0])
+        yaw_robot_cmd = action[1]
+        dist_robot_cmd = action[0]
+        turn_angle_radian = np.arctan2(_nav_action[1],_nav_action[0])
+        turn_angle = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
+        # print(turn_angle)
+        # from pnc.robot_system.pinocchio_robot_system import PinocchioRobotSystem
+        # _robot = PinocchioRobotSystem(
+        #     cwd + "/robot_model/atlas/atlas.urdf",
+        #     cwd + "/robot_model/atlas", False, PnCConfig.PRINT_ROBOT_INFO)
+        # # print('robot',_robot)
+        taf_container = AtlasTaskForceContainer(_robot)
+        # # _com_task = BasicTask(robot, "COM", 3, 'com', PnCConfig.SAVE_DATA)
+        # # _pelvis_ori_task = BasicTask(robot, "LINK_ORI", 3, "pelvis_com",
+        # #                               PnCConfig.SAVE_DATA)
+        turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
+        # # print(turn_angle)
+        # ctrl_arch = AtlasControlArchitecture(_robot)
+        # if ctrl_arch.state == WalkingState.BALANCE:
+        #     print("hell yeah boi")
+        
 
 
 
@@ -379,7 +370,7 @@ if __name__ == "__main__":
         if SimConfig.PRINT_TIME:
             start_time = time.time()
         command = interface.get_command(copy.deepcopy(sensor_data)) # this is what makes it really slow
-        # # # print('comand',command)
+        # print('comand',command)
 
         if SimConfig.PRINT_TIME:
             end_time = time.time()
@@ -388,21 +379,19 @@ if __name__ == "__main__":
         # # # Apply Trq
         pybullet_util.set_motor_trq(robot, joint_id, command)
         
-        # ctrl_arch = AtlasControlArchitecture(_robot)
-        ctrl_arch = AtlasControlArchitecture(_robot)
-        print("ctrlarch",ctrl_arch.state)
-        print("walkstate",WalkingState.BALANCE)
-        if ctrl_arch._state == WalkingState.BALANCE:
-            print("hell yeah boi")
-        # Interface(abc.ABC).abstractmethod.get_command(sensor_data)
-        # print("=========",time.time())
-        # print()
-        # command = interface.get_command(copy.deepcopy(sensor_data))
         p.stepSimulation()
-        # walking_states = interface.get_command(sensor_data)
-        # if walking_states:
-        #     stand_state = walking_states[0]
-        #     print(stand_state)
+
+        # if the state is balance then continue to next command
+        if AtlasStateProvider(ctrl_arch)._state == 1:
+            if turn_angle<=-8:
+                turn_func.turn_right(turn_angle_radian)
+                interface.interrupt_logic.b_interrupt_button_nine = True
+                
+            elif turn_angle>=8:
+                turn_func.turn_left(turn_angle_radian)
+                interface.interrupt_logic.b_interrupt_button_seven = True
+            else:
+                interface.interrupt_logic.b_interrupt_button_eight = True
         t += dt
         count += 1
         # break
