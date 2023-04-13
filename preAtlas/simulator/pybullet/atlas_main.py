@@ -115,7 +115,6 @@ if __name__ == "__main__":
     robot = p.loadURDF(cwd + "/robot_model/atlas/atlas.urdf",
                        SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
                        SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT)
-    print('================type=================',type(robot))
 
     planeId = p.loadURDF(cwd + "/robot_model/ground/plane.urdf", [0, 0, 0])
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
@@ -176,8 +175,6 @@ if __name__ == "__main__":
     PATH_CHECKPOINT_BC = os.path.join(PATH_ROOT, SUBPATH['BC Checkpoint'])
     nav_path = "{}/{}/models/model_best_training.pth".format(PATH_CHECKPOINT_BC, nav_policy)
     eval_policy = policy_from_checkpoint(ckpt_path=nav_path)[0]
-    print(eval_policy)
-
     ######################################################################################### (get obs)
     _view_agent = {'dist': 0.2,
                             'offset': np.array([0.45, 0, 0.]),
@@ -393,5 +390,6 @@ if __name__ == "__main__":
             else:
                 interface.interrupt_logic.b_interrupt_button_eight = True
         t += dt
+        print(t)
         count += 1
         # break

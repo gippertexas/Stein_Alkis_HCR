@@ -17,9 +17,11 @@ class SingleSupportSwing(StateMachine):
 
     def first_visit(self):
         if self._leg_side == Footstep.RIGHT_SIDE:
-            print("[WalkingState] RightLeg SingleSupportSwing")
+            # print("[WalkingState] RightLeg SingleSupportSwing")
+            pass
         else:
-            print("[WalkingState] LeftLeg SingleSupportSwing")
+            # print("[WalkingState] LeftLeg SingleSupportSwing")
+            pass
         self._start_time = self._sp.curr_time
         self._end_time = self._trajectory_managers["dcm"].compute_swing_time()
 
@@ -61,13 +63,14 @@ class SingleSupportSwing(StateMachine):
             if self._state_machine_time >= 0.5 * self._end_time:
                 if self._leg_side == Footstep.LEFT_SIDE:
                     if self._sp.b_lf_contact:
-                        print("Early left foot contact at {}/{}".format(
-                            self._state_machine_time, self._end_time))
+                        # pass
+                        # print("Early left foot contact at {}/{}".format(
+                        #     self._state_machine_time, self._end_time))
                         return True
                 else:
                     if self._sp.b_rf_contact:
-                        print("Early right foot contact at {}/{}".format(
-                            self._state_machine_time, self._end_time))
+                        # print("Early right foot contact at {}/{}".format(
+                        #     self._state_machine_time, self._end_time))
                         return True
             return False
 

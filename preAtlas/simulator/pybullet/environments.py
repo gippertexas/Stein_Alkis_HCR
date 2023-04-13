@@ -787,7 +787,7 @@ def build_demo_env(render, env_type, record=None):
 
 def build_robot_env(sim_config, gait_agent, rew_config={}, env_type=None, render=False, record=None):
 
-    print(sim_config)
+    # print(sim_config)
     # Configure envirnoment setup.
     reward_param = copy.copy(REWARD_PARAM_DICT)
     random_param = copy.copy(RANDOM_PARAM_DICT)
@@ -808,14 +808,14 @@ def build_robot_env(sim_config, gait_agent, rew_config={}, env_type=None, render
 
     reward_param = copy.deepcopy(rew_config)
 
-    print("Random Config")
-    print(random_param)
+    # print("Random Config")
+    # print(random_param)
 
-    print("Dynamics Config")
-    print(dynamic_param)
+    # print("Dynamics Config")
+    # print(dynamic_param)
 
-    print("Sensor Config")
-    print(sensor_mode)
+    # print("Sensor Config")
+    # print(sensor_mode)
 
 
     cmd_trj = TrajectoryHandler()

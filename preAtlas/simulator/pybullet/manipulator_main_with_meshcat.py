@@ -46,10 +46,10 @@ if __name__ == "__main__":
     try:
         viz.initViewer(open=True)
     except ImportError as err:
-        print(
-            "Error while initializing the viewer. It seems you should install Python meshcat"
-        )
-        print(err)
+        # print(
+        #     "Error while initializing the viewer. It seems you should install Python meshcat"
+        # )
+        # print(err)
         sys.exit(0)
     viz.loadViewerModel()
     vis_q = pin.neutral(model)

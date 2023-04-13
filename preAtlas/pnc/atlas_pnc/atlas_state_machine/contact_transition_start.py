@@ -21,9 +21,11 @@ class ContactTransitionStart(StateMachine):
 
     def first_visit(self):
         if self._leg_side == Footstep.RIGHT_SIDE:
-            print("[WalkingState] RightLeg ContactTransitionStart")
+            # print("[WalkingState] RightLeg ContactTransitionStart")
+            pass
         else:
-            print("[WalkingState] LeftLeg ContactTransitionStart")
+            # print("[WalkingState] LeftLeg ContactTransitionStart")
+            pass
         self._start_time = self._sp.curr_time
 
         # Initialize Reaction Force Ramp to Max

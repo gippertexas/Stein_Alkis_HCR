@@ -19,9 +19,11 @@ class ContactTransitionEnd(StateMachine):
 
     def first_visit(self):
         if self._leg_side == Footstep.RIGHT_SIDE:
-            print("[WalkingState] RightLeg ContactTransitionEnd")
+            # print("[WalkingState] RightLeg ContactTransitionEnd")
+            pass
         else:
-            print("[WalkingState] LeftLeg ContactTransitionEnd")
+            # print("[WalkingState] LeftLeg ContactTransitionEnd")
+            pass
         self._start_time = self._sp.curr_time
         self._end_time = self._trajectory_managers[
             "dcm"].compute_rf_z_ramp_down_time()
