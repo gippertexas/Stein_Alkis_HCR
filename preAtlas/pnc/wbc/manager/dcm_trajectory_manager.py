@@ -241,17 +241,19 @@ class DCMTrajectoryManager(object):
         self._reset_idx_and_clear_footstep_list()
         self._populate_strafe(3, -self._nominal_strafe_distance)
 
-    def turn_left(self):
+    def turn_left(self, turn_angle = np.pi/4):
         self._reset_idx_and_clear_footstep_list()
-        self._populate_turn(3, self._nominal_turn_radians)
+        # self._populate_turn(3, self._nominal_turn_radians)
+        self._populate_turn(3, turn_angle)
     # def turn_left_response(self, angle):
     #     self._reset_ids_and_clear_footstep_list()
     #     self._populate_turn(3, angle)
 
 
-    def turn_right(self):
+    def turn_right(self, turn_angle = np.pi/4):
         self._reset_idx_and_clear_footstep_list()
         self._populate_turn(3, self._nominal_turn_radians)
+        self._populate_turn(3, turn_angle)
 
     def _populate_step_in_place(self, num_step, robot_side_first):
         self._update_starting_stance()
