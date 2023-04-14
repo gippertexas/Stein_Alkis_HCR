@@ -113,8 +113,10 @@ def visionAngle(_nav_action):
     rpy_pos = roll_pitch_yaw
     rpy_vel = TransformAngularVelocityToLocalFrame(angular_velo, orientation)
     errors = np.concatenate(((scale * target_xy - xyz_vel[0:2]), scale * target_yaw -rpy_vel[2]), axis=None)
-    
-    return {'errors':errors, 'linear':xyz_vel, 'angular':rpy_vel, 'position': xyz_pos, 'orientation': rpy_pos, 'nav_action': _nav_action}
+    turn_angle_radian = np.arctan2(_nav_action[1],_nav_action[0])
+    turn_angle = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
+    return(turn_angle_radian)
+    # return {'errors':errors, 'linear':xyz_vel, 'angular':rpy_vel, 'position': xyz_pos, 'orientation': rpy_pos, 'nav_action': _nav_action}
 
 
 def set_initial_config(robot, joint_id):
@@ -335,11 +337,11 @@ if __name__ == "__main__":
         # #     cwd + "/robot_model/atlas/atlas.urdf",
         # #     cwd + "/robot_model/atlas", False, PnCConfig.PRINT_ROBOT_INFO)
         # # print('robot',_robot)
-        # # taf_container = AtlasTaskForceContainer(_robot)
+        taf_container = AtlasTaskForceContainer(_robot)
         # # _com_task = BasicTask(robot, "COM", 3, 'com', PnCConfig.SAVE_DATA)
         # # _pelvis_ori_task = BasicTask(robot, "LINK_ORI", 3, "pelvis_com",
         # #                               PnCConfig.SAVE_DATA)
-        # # turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
+        turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
         # # # print(turn_angle)
         # ctrl_arch = AtlasControlArchitecture(_robot)
         # # if ctrl_arch.state == WalkingState.BALANCE:
@@ -368,9 +370,16 @@ if __name__ == "__main__":
         #     interface.interrupt_logic.b_interrupt_button_nine = True #turn right
         # if the state is balance then continue to next command
         if AtlasStateProvider(ctrl_arch)._state == 1:
-            turndecision = visionAngle(_nav_action)
-            print(turndecision)
-            interface.interrupt_logic.b_interrupt_button_eight = True
+            turn_angle_rad = visionAngle(_nav_action)
+            turn_angle = np.rad2deg(turn_angle_rad)
+            if(turn_angle<-8):
+                turn_func.turn_right(turn_angle_rad)
+                interface.interrupt_logic.b_interrupt_button_nine = True
+            if(turn_angle<-8):
+                turn_func.turn_right(turn_angle_rad)
+                interface.interrupt_logic.b_interrupt_button_nine = True
+            else:
+                interface.interrupt_logic.b_interrupt_button_eight = True
          # # Compute Command
         if SimConfig.PRINT_TIME:
             start_time = time.time()
