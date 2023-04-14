@@ -90,10 +90,10 @@ if __name__ == "__main__":
     try:
         viz.initViewer(open=True)
     except ImportError as err:
-        # print(
-        #     "Error while initializing the viewer. It seems you should install Python meshcat"
-        # )
-        # print(err)
+        print(
+            "Error while initializing the viewer. It seems you should install Python meshcat"
+        )
+        print(err)
         sys.exit(0)
     viz.loadViewerModel()
     vis_q = pin.neutral(model)
@@ -120,25 +120,25 @@ if __name__ == "__main__":
     def on_press(key):  # The function that's called when a key is pressed
         if hasattr(key, 'char'):
             if key.char == '8':
-                # print("8 is pressed")
+                print("8 is pressed")
                 interface.interrupt_logic.b_interrupt_button_eight = True
             elif key.char == '5':
-                # print("5 is pressed")
+                print("5 is pressed")
                 interface.interrupt_logic.b_interrupt_button_five = True
             elif key.char == '4':
-                # print("4 is pressed")
+                print("4 is pressed")
                 interface.interrupt_logic.b_interrupt_button_four = True
             elif key.char == '2':
-                # print("2 is pressed")
+                print("2 is pressed")
                 interface.interrupt_logic.b_interrupt_button_two = True
             elif key.char == '6':
-                # print("6 is pressed")
+                print("6 is pressed")
                 interface.interrupt_logic.b_interrupt_button_six = True
             elif key.char == '7':
-                # print("7 is pressed")
+                print("7 is pressed")
                 interface.interrupt_logic.b_interrupt_button_seven = True
             elif key.char == '9':
-                # print("9 is pressed")
+                print("9 is pressed")
                 interface.interrupt_logic.b_interrupt_button_nine = True
 
     def on_release(key):  # The function that's called when a key is released
@@ -169,7 +169,7 @@ if __name__ == "__main__":
 
         if SimConfig.PRINT_TIME:
             end_time = time.time()
-            # print("ctrl computation time: ", end_time - start_time)
+            print("ctrl computation time: ", end_time - start_time)
 
         # Apply Trq
         pybullet_util.set_motor_trq(robot, joint_id, command)

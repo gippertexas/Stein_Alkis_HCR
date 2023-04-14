@@ -44,7 +44,7 @@ class DoubleSupportStand(StateMachine):
         self._com_height_des = val
 
     def first_visit(self):
-        # print("[WalkingState] STAND")
+        print("[WalkingState] STAND")
         self._start_time = self._sp.curr_time
 
         # Initialize CoM Trajectory

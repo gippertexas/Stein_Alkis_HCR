@@ -10,8 +10,7 @@ from util import liegroup
 
 
 def pretty_print(ob):
-    # print(json.dumps(ob, indent=4))
-    pass
+    print(json.dumps(ob, indent=4))
 
 
 def euler_to_rot(angles):
@@ -140,8 +139,7 @@ def denormalize(x, mean, std):
 
 def print_attrs(ob):
     attr = vars(ob)
-    pass
-    # print(", \n".join("%s: %s" % item for item in attr.items()))
+    print(", \n".join("%s: %s" % item for item in attr.items()))
 
 
 def try_multiprocess(args_list, num_cpu, f, max_timeouts=1):
@@ -165,9 +163,8 @@ def try_multiprocess(args_list, num_cpu, f, max_timeouts=1):
         try:
             results = [p.get(timeout=36000) for p in pruns]
         except Exception as e:
-            pass
-            # print(str(e))
-            # print('WARNING: error raised in multiprocess, trying again')
+            print(str(e))
+            print('WARNING: error raised in multiprocess, trying again')
 
             pool.close()
             pool.terminate()

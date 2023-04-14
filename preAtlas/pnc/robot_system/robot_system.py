@@ -41,18 +41,17 @@ class RobotSystem(abc.ABC):
         self._config_robot(urdf_file, package_name)
 
         if b_print_robot_info:
-            # print("=" * 80)
-            # print("PnCRobot")
-            # print("nq: ", self._n_q, ", nv: ", self._n_q_dot, ", na: ",
-            #       self._n_a, ", nvirtual: ", self._n_floating)
-            # print("+" * 80)
-            # print("Joint Infos")
-            # util.pretty_print([*self._joint_id.keys()])
-            # print("+" * 80)
-            # print("Link Infos")
-            # util.pretty_print([*self._link_id.keys()])
-            # print("=" * 80)
-            pass
+            print("=" * 80)
+            print("PnCRobot")
+            print("nq: ", self._n_q, ", nv: ", self._n_q_dot, ", na: ",
+                  self._n_a, ", nvirtual: ", self._n_floating)
+            print("+" * 80)
+            print("Joint Infos")
+            util.pretty_print([*self._joint_id.keys()])
+            print("+" * 80)
+            print("Link Infos")
+            util.pretty_print([*self._link_id.keys()])
+            print("=" * 80)
 
         self._joint_positions = None
         self._joint_velocities = None

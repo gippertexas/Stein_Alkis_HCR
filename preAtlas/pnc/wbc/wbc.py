@@ -115,7 +115,7 @@ class WBC(object):
             j_dot_q_dot = task.jacobian_dot_q_dot
             x_ddot = task.op_cmd
             if verbose:
-                # print(i, " th task")
+                print(i, " th task")
                 task.debug()
 
             cost_t_mat += self._w_hierarchy[i] * np.dot(j.transpose(), j)
@@ -151,15 +151,14 @@ class WBC(object):
             cost_vec = np.copy(cost_t_vec)
 
         if verbose:
-            # print("cost_t_mat")
-            # print(cost_t_mat)
-            # print("cost_t_vec")
-            # print(cost_t_vec)
-            # print("cost_rf_mat")
-            # print(cost_rf_mat)
-            # print("cost_rf_vec")
-            # print(cost_rf_vec)
-            pass
+            print("cost_t_mat")
+            print(cost_t_mat)
+            print("cost_t_vec")
+            print(cost_t_vec)
+            print("cost_rf_mat")
+            print(cost_rf_mat)
+            print("cost_rf_vec")
+            print(cost_rf_vec)
 
         # ======================================================================
         # Equality Constraint
@@ -220,16 +219,15 @@ class WBC(object):
                      self._trq_limit[:, 1]))
 
         if verbose:
-            # print("eq_mat")
-            # print(eq_mat)
-            # print("eq_vec")
-            # print(eq_vec)
+            print("eq_mat")
+            print(eq_mat)
+            print("eq_vec")
+            print(eq_vec)
 
-            # print("ineq_mat")
-            # print(ineq_mat)
-            # print("ineq_vec")
-            # print(ineq_vec)
-            pass
+            print("ineq_mat")
+            print(ineq_mat)
+            print("ineq_vec")
+            print(ineq_vec)
 
         sol = solve_qp(cost_mat,
                        cost_vec,
@@ -259,10 +257,9 @@ class WBC(object):
         joint_acc_cmd = np.dot(self._sa, sol_q_ddot)
 
         if verbose:
-            # print("joint_trq_cmd: ", joint_trq_cmd)
-            # print("sol_q_ddot: ", sol_q_ddot)
-            # print("sol_rf: ", sol_rf)
-            pass
+            print("joint_trq_cmd: ", joint_trq_cmd)
+            print("sol_q_ddot: ", sol_q_ddot)
+            print("sol_rf: ", sol_rf)
 
         if self._b_data_save:
             self._data_saver.add('joint_trq_cmd', joint_trq_cmd)

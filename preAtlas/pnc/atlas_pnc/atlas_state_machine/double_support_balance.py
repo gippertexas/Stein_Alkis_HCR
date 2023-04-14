@@ -32,7 +32,7 @@ class DoubleSupportBalance(StateMachine):
         self._trajectory_managers["rfoot"].use_current()
 
     def first_visit(self):
-        # print("[WalkingState] BALANCE")
+        print("[WalkingState] BALANCE")
         self._b_state_switch_trigger = False
         self._start_time = self._sp.curr_time
 

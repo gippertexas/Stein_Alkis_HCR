@@ -373,26 +373,22 @@ class DCMPlanner(object):
 
     def _print_boundary_conditions(self):
         for i in range(len(self._vrp_list)):
-            # print("[{} th vrp] type: {}, pos: {}".format(
-            #     i, self._vrp_type_list[i], self._vrp_list[i]))
-            pass
+            print("[{} th vrp] type: {}, pos: {}".format(
+                i, self._vrp_type_list[i], self._vrp_list[i]))
         for i in range(len(self._dcm_ini_list)):
-            # print("[{} th dcm] ini: {}, end: {}".format(
-            #     i, self._dcm_ini_list[i], self._dcm_eos_list[i]))
-            pass
+            print("[{} th dcm] ini: {}, end: {}".format(
+                i, self._dcm_ini_list[i], self._dcm_eos_list[i]))
         for i in range(len(self._vrp_list)):
-            # print(
-            #     "[{} th ds] dcm_ini_ds: {}, dcm_end_ds: {}, dcm_vel_ini_ds: {}, dcm_vel_end_ds: {}"
-            #     .format(i, self._dcm_ini_ds_list[i], self._dcm_end_ds_list[i],
-            #             self._dcm_vel_ini_ds_list[i],
-            #             self._dcm_vel_end_ds_list[i]))
-            pass
+            print(
+                "[{} th ds] dcm_ini_ds: {}, dcm_end_ds: {}, dcm_vel_ini_ds: {}, dcm_vel_end_ds: {}"
+                .format(i, self._dcm_ini_ds_list[i], self._dcm_end_ds_list[i],
+                        self._dcm_vel_ini_ds_list[i],
+                        self._dcm_vel_end_ds_list[i]))
 
         for i in range(len(self._vrp_list)):
-            # print("[{} th] {}, {}, {}, {}".format(
-            #     i, self._compute_t_step_start(i), self._compute_t_step_end(i),
-            #     self._compute_ds_t_start(i), self._compute_ds_t_end(i)))
-            pass
+            print("[{} th] {}, {}, {}, {}".format(
+                i, self._compute_t_step_start(i), self._compute_t_step_end(i),
+                self._compute_ds_t_start(i), self._compute_ds_t_end(i)))
 
     def _compute_t_step_start(self, step_idx):
         """
