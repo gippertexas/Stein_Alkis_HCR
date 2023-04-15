@@ -25,6 +25,7 @@ class DCMTrajectoryManager(object):
         self._robot = robot
         self._lfoot_id = lfoot_id
         self._rfoot_id = rfoot_id
+        
 
         self._des_com_pos = np.zeros(3)
         self._des_com_vel = np.zeros(3)
@@ -234,13 +235,13 @@ class DCMTrajectoryManager(object):
         self._reset_idx_and_clear_footstep_list()
         self._populate_strafe(3, -self._nominal_strafe_distance)
 
-    def turn_left(self, turn_angle = np.pi/4):
+    def turn_left(self):
         self._reset_idx_and_clear_footstep_list()
-        self._populate_turn(3, turn_angle)
+        self._populate_turn(3, self.nominal_turn_radians)
 
-    def turn_right(self, turn_angle = np.pi/4):
+    def turn_right(self):
         self._reset_idx_and_clear_footstep_list()
-        self._populate_turn(3, turn_angle)
+        self._populate_turn(3, self.nominal_turn_radians)
 
     def _populate_step_in_place(self, num_step, robot_side_first):
         self._update_starting_stance()

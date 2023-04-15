@@ -32,11 +32,13 @@ from pnc.atlas_pnc.atlas_control_architecture import AtlasControlArchitecture
 from pnc.atlas_pnc.atlas_state_provider import AtlasStateProvider
 
 from config.atlas_config import SimConfig
+from config.atlas_config import WalkingConfig
 from pnc.atlas_pnc.atlas_interface import AtlasInterface
 from util import pybullet_util
 from util import util
 from util import liegroup
 from pnc.robot_system.pinocchio_robot_system import PinocchioRobotSystem
+from Environment_Setup import createRobot
 DEG_TO_RAD = np.pi/180.
 RAD_TO_DEG = 180./np.pi
 SUBPATH_CONFIG = {  "ppo":      "ppo.yaml",
@@ -119,6 +121,7 @@ def visionAngle(_nav_action):
     # return {'errors':errors, 'linear':xyz_vel, 'angular':rpy_vel, 'position': xyz_pos, 'orientation': rpy_pos, 'nav_action': _nav_action}
 
 
+
 def set_initial_config(robot, joint_id):
     # shoulder_x
     p.resetJointState(robot, joint_id["l_arm_shx"], -np.pi / 4, 0.)
@@ -173,35 +176,41 @@ signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == "__main__":
 
-    # Environment Setup
-    p.connect(p.GUI)
-    p.resetDebugVisualizerCamera(cameraDistance=1.5,
-                                 cameraYaw=120,
-                                 cameraPitch=-30,
-                                 cameraTargetPosition=[1, 0.5, 1.5])
-    p.setGravity(0, 0, -9.8)
-    p.setPhysicsEngineParameter(fixedTimeStep=SimConfig.CONTROLLER_DT,
-                                numSubSteps=SimConfig.N_SUBSTEP)
-    # if SimConfig.VIDEO_RECORD:
-    # video_dir = 'video/atlas_pnc'
-    # if os.path.exists(video_dir):
-    # shutil.rmtree(video_dir)
-    # os.makedirs(video_dir)
+    # # Environment Setup
+    # p.connect(p.GUI)
+    # p.resetDebugVisualizerCamera(cameraDistance=1.5,
+    #                              cameraYaw=120,
+    #                              cameraPitch=-30,
+    #                              cameraTargetPosition=[1, 0.5, 1.5])
+    # p.setGravity(0, 0, -9.8)
+    # p.setPhysicsEngineParameter(fixedTimeStep=SimConfig.CONTROLLER_DT,
+    #                             numSubSteps=SimConfig.N_SUBSTEP)
+    # # if SimConfig.VIDEO_RECORD:
+    # # video_dir = 'video/atlas_pnc'
+    # # if os.path.exists(video_dir):
+    # # shutil.rmtree(video_dir)
+    # # os.makedirs(video_dir)
 
-    # Create Robot, Ground
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
-    robot = p.loadURDF(cwd + "/robot_model/atlas/atlas.urdf",
-                       SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
-                       SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT)
+    # # Create Robot, Ground
+    # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
+    # robot = p.loadURDF(cwd + "/robot_model/atlas/atlas.urdf",
+    #                    SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
+    #                    SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT)
 
+    # planeId = p.loadURDF(cwd + "/robot_model/ground/plane.urdf", [0, 0, 0])
+    # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    # nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
+    #     robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
+    #     SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
+    
+    # #######################################################################
+    robot = createRobot()
+    
     planeId = p.loadURDF(cwd + "/robot_model/ground/plane.urdf", [0, 0, 0])
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
         robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
         SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
-    
-    #######################################################################
-    
     FIELD_RANGE = [50, 3]
     FURNITURES = {}
     OBJECTS = {}
@@ -341,7 +350,7 @@ if __name__ == "__main__":
         # # _com_task = BasicTask(robot, "COM", 3, 'com', PnCConfig.SAVE_DATA)
         # # _pelvis_ori_task = BasicTask(robot, "LINK_ORI", 3, "pelvis_com",
         # #                               PnCConfig.SAVE_DATA)
-        turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
+        
         # # # print(turn_angle)
         # ctrl_arch = AtlasControlArchitecture(_robot)
         # # if ctrl_arch.state == WalkingState.BALANCE:
@@ -372,12 +381,16 @@ if __name__ == "__main__":
         if AtlasStateProvider(ctrl_arch)._state == 1:
             turn_angle_rad = visionAngle(_nav_action)
             turn_angle = np.rad2deg(turn_angle_rad)
-            if(turn_angle<-8):
-                turn_func.turn_right(turn_angle_rad)
+            turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
+            # WalkingConfig.NOMINAL_TURN_RADIANS = turn_angle_rad
+            DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad
+            print(turn_angle)
+            if(turn_angle<0):
+                turn_func.turn_right()
                 interface.interrupt_logic.b_interrupt_button_nine = True
-            if(turn_angle<-8):
-                turn_func.turn_right(turn_angle_rad)
-                interface.interrupt_logic.b_interrupt_button_nine = True
+            if(turn_angle>0):
+                turn_func.turn_left()
+                interface.interrupt_logic.b_interrupt_button_seven = True
             else:
                 interface.interrupt_logic.b_interrupt_button_eight = True
          # # Compute Command

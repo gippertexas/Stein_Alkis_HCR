@@ -18,6 +18,8 @@ from pnc.atlas_pnc.atlas_state_machine.contact_transition_start import ContactTr
 from pnc.atlas_pnc.atlas_state_machine.contact_transition_end import ContactTransitionEnd
 from pnc.atlas_pnc.atlas_state_machine.single_support_swing import SingleSupportSwing
 from pnc.atlas_pnc.atlas_state_provider import AtlasStateProvider
+from simulator.pybullet.viewAgent import visionAngle
+
 
 
 class AtlasControlArchitecture(ControlArchitecture):
@@ -33,6 +35,9 @@ class AtlasControlArchitecture(ControlArchitecture):
         # Initialize Planner
         self._dcm_planner = DCMPlanner()
 
+        # Initialize Planner
+        # ?self.turn_angle_rad = visionAngle(0,robot)
+        # self.turn_angle_rad = 0
         # In___itialize Task Manager
         self._rfoot_tm = FootTrajectoryManager(
             self._taf_container.rfoot_pos_task,
