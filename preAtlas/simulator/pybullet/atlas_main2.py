@@ -46,8 +46,13 @@ SUBPATH_CONFIG = {  "ppo":      "ppo.yaml",
                     "simulation": "simulation.yaml"}
 
 scale = 33./13.
+<<<<<<< Updated upstream
 Filter = 0.667
 nominalForward = 0.25
+=======
+
+
+>>>>>>> Stashed changes
 def train_eval():
     parser = argparse.ArgumentParser()
     parser.add_argument("--nav_policy", type=str, default="bcrnn",
@@ -64,10 +69,79 @@ def train_eval():
     eval_policy = policy_from_checkpoint(ckpt_path=nav_path)[0]
     return eval_policy
 
+def getRayFromTo(mouseX, mouseY):
+  width, height, viewMat, projMat, cameraUp, camForward, horizon, vertical, _, _, dist, camTarget = p.getDebugVisualizerCamera(
+  )
+  camPos = [
+      camTarget[0] - dist * camForward[0], camTarget[1] - dist * camForward[1],
+      camTarget[2] - dist * camForward[2]
+  ]
+  farPlane = 10000
+  rayForward = [(camTarget[0] - camPos[0]), (camTarget[1] - camPos[1]), (camTarget[2] - camPos[2])]
+  lenFwd = math.sqrt(rayForward[0] * rayForward[0] + rayForward[1] * rayForward[1] +
+                     rayForward[2] * rayForward[2])
+  invLen = farPlane * 1. / lenFwd
+  rayForward = [invLen * rayForward[0], invLen * rayForward[1], invLen * rayForward[2]]
+  rayFrom = camPos
+  oneOverWidth = float(1) / float(width)
+  oneOverHeight = float(1) / float(height)
+
+  dHor = [horizon[0] * oneOverWidth, horizon[1] * oneOverWidth, horizon[2] * oneOverWidth]
+  dVer = [vertical[0] * oneOverHeight, vertical[1] * oneOverHeight, vertical[2] * oneOverHeight]
+  rayToCenter = [
+      rayFrom[0] + rayForward[0], rayFrom[1] + rayForward[1], rayFrom[2] + rayForward[2]
+  ]
+  ortho = [
+      -0.5 * horizon[0] + 0.5 * vertical[0] + float(mouseX) * dHor[0] - float(mouseY) * dVer[0],
+      -0.5 * horizon[1] + 0.5 * vertical[1] + float(mouseX) * dHor[1] - float(mouseY) * dVer[1],
+      -0.5 * horizon[2] + 0.5 * vertical[2] + float(mouseX) * dHor[2] - float(mouseY) * dVer[2]
+  ]
+
+  rayTo = [
+      rayFrom[0] + rayForward[0] + ortho[0], rayFrom[1] + rayForward[1] + ortho[1],
+      rayFrom[2] + rayForward[2] + ortho[2]
+  ]
+  lenOrtho = math.sqrt(ortho[0] * ortho[0] + ortho[1] * ortho[1] + ortho[2] * ortho[2])
+  alpha = math.atan(lenOrtho / farPlane)
+  return rayFrom, rayTo, alpha
+
+def get_point_cloud(width, height, view_matrix, proj_matrix):
+    # based on https://stackoverflow.com/questions/59128880/getting-world-coordinates-from-opengl-depth-buffer
+
+    # get a depth image
+    # "infinite" depths will have a value close to 1
+    image_arr = p.getCameraImage(width=width, height=height, viewMatrix=view_matrix, projectionMatrix=proj_matrix)
+    depth = image_arr[3]
+
+    # create a 4x4 transform matrix that goes from pixel coordinates (and depth values) to world coordinates
+    proj_matrix = np.asarray(proj_matrix).reshape([4, 4], order="F")
+    view_matrix = np.asarray(view_matrix).reshape([4, 4], order="F")
+    tran_pix_world = np.linalg.inv(np.matmul(proj_matrix, view_matrix))
+
+    # create a grid with pixel coordinates and depth values
+    y, x = np.mgrid[-1:1:2 / height, -1:1:2 / width]
+    y *= -1.
+    x, y, z = x.reshape(-1), y.reshape(-1), depth.reshape(-1)
+    h = np.ones_like(z)
+
+    pixels1 = np.stack([x, y, z, h], axis=1)
+    # filter out "infinite" depths
+    pixels1 = pixels1[z < 0.99]
+    pixels1[:, 2] = 2 * pixels1[:, 2] - 1
+
+    # turn pixels to world coordinates
+    points = np.matmul(tran_pix_world, pixels1.T).T
+    points /= points[:, 3: 4]
+    points = points[:, :3]
+
+    return points
+
 def visionAngle(_nav_action):
     position, orientation = p.getBasePositionAndOrientation(robot)
+    print(position)
     view_point, _ = p.multiplyTransforms(position, orientation,_view_agent['offset'], [0, 0, 0, 1])
     view_rpy = p.getEulerFromQuaternion(orientation)
+    # print('pitch',view_rpy[1])
     # if (t%50 == 0):
     view_matrix = p.computeViewMatrixFromYawPitchRoll(
         cameraTargetPosition = view_point,
@@ -81,7 +155,7 @@ def visionAngle(_nav_action):
         aspect=float(_view_agent['width']) / _view_agent['height'],
         nearVal=_view_agent['near'],
         farVal=_view_agent['far'])
-    (_, _, rgb, depth, _) = p.getCameraImage(
+    (imgWidth, imgHeight, rgb, depth, _) = p.getCameraImage(
         width=_view_agent['width'],
         height=_view_agent['height'],
         renderer=p.ER_TINY_RENDERER,
@@ -104,8 +178,8 @@ def visionAngle(_nav_action):
     }
     
     action = eval_policy(obs_dict)
-    # # # print(action)
-    
+    # # # # print(action)
+    # print('yaw',_yaw)
     _nav_action = np.clip(action, [0, -1.0], [1., 1.0])
     target_xy=np.zeros(2)
     target_xy[0] = action[0]/scale
@@ -119,10 +193,67 @@ def visionAngle(_nav_action):
     rpy_vel = TransformAngularVelocityToLocalFrame(angular_velo, orientation)
     errors = np.concatenate(((scale * target_xy - xyz_vel[0:2]), scale * target_yaw -rpy_vel[2]), axis=None)
     turn_angle_radian = np.arctan2(_nav_action[1],_nav_action[0])
+<<<<<<< Updated upstream
     turn_angle = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
     print(action)
     filt = action[0]
     return(turn_angle_radian)
+=======
+    turn_angle_degrees = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
+
+    distance_in_front = p.rayTest(position, [2,0,0])
+    left_side = [position[0]+1,1,.5]
+    right_side = [position[0]+1,-1,.5]
+
+    # print(distance_in_front)
+    imgW = imgWidth
+    imgH = imgHeight
+    # print('height/width',imgH,'/',imgW)
+    depth_img_buffer = np.reshape(depth, [imgW,imgH])
+    # print(depth_img_buffer)
+    pointCloud = np.empty([imgH, imgW, 4])
+    projMatrix = np.array(proj_matrix).reshape([4,4], order = 'F')
+    vieMatrix = np.array(view_matrix).reshape([4,4],order='F')
+    tran_pix_world = np.linalg.inv(np.matmul(projMatrix, vieMatrix))
+    # count_ = 0
+    # y, x = np.mgrid[-1:1:2 / height, -1:1:2 / width]
+    # y *= -1.
+    # x, y, z = x.reshape(-1), y.reshape(-1), depth.reshape(-1)
+    # h = np.ones_like(z)
+
+    # pixels1 = np.stack([x, y, z, h], axis=1)
+    # # filter out "infinite" depths
+    # pixels1 = pixels1[z < 0.99]
+    # pixels1[:, 2] = 2 * pixels1[:, 2] - 1
+
+    # # turn pixels to world coordinates
+    # points = np.matmul(tran_pix_world, pixels1.T).T
+    # points /= points[:, 3: 4]
+    # points = points[:, :3]
+
+    for h in range(imgH):
+        for w in range(imgW):
+            x = (2*w - imgW)/imgW
+            y = -(2*h - imgH)/imgH  # be careful！ deepth and its corresponding position
+            z = 2*depth_img_buffer[w,h] - 1
+            pixPos = np.array([x, y, z, 1])
+            positions = np.matmul(tran_pix_world, pixPos)
+
+            pointCloud[h,w,:] = positions / positions[3]
+            # count_+=1
+    distance_list=[5]
+    for i in pointCloud:
+        distance=np.sqrt(i[0][0]**2+i[0][1]**2+i[0][2]**2)
+        if distance<distance_list[0]:
+            distance_list.pop(0)
+            distance_list.append(distance)
+            
+
+    # print('pointcloud',pointCloud.shape)
+    # print(distance_list)
+    # print(depth_img_buffer)
+    return(turn_angle_radian, view_matrix, proj_matrix, imgW, imgH)
+>>>>>>> Stashed changes
     # return {'errors':errors, 'linear':xyz_vel, 'angular':rpy_vel, 'position': xyz_pos, 'orientation': rpy_pos, 'nav_action': _nav_action}
 
 
@@ -232,7 +363,11 @@ if __name__ == "__main__":
     #     robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
     #     SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
 
+<<<<<<< Updated upstream
     cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [1.5, 0.5, 0.])
+=======
+    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [1.0, 0., 0.])
+>>>>>>> Stashed changes
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
         robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
@@ -385,11 +520,16 @@ if __name__ == "__main__":
         #     interface.interrupt_logic.b_interrupt_button_nine = True #turn right
         # if the state is balance then continue to next command
         if AtlasStateProvider(ctrl_arch)._state == 1:
-            turn_angle_rad = visionAngle(_nav_action)
+            turn_angle_rad = visionAngle(_nav_action)[0]
+            view_mat = visionAngle(_nav_action)[1]
+            proj_mat = visionAngle(_nav_action)[2]
+            width = visionAngle(_nav_action)[3]
+            height = visionAngle(_nav_action)[4]
             turn_angle = np.rad2deg(turn_angle_rad)
             turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
             # WalkingConfig.NOMINAL_TURN_RADIANS = turn_angle_rad
             DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad/3
+<<<<<<< Updated upstream
             
             # DCMTrajectoryManager.nominal_forward_step = (distFilt/Filter)*nominalForward
             print(turn_angle)
@@ -397,6 +537,14 @@ if __name__ == "__main__":
                 turn_func.turn_right()
                 interface.interrupt_logic.b_interrupt_button_nine = True
                 degree_offset += turn_angle
+=======
+            print(turn_angle)
+            # pointCloud = get_point_cloud(width, height, view_mat, proj_mat)
+            # print(pointCloud)
+            if(turn_angle<-8):
+                turn_func.turn_right()
+                interface.interrupt_logic.b_interrupt_button_nine = True
+>>>>>>> Stashed changes
             if(turn_angle>8):
                 turn_func.turn_left()
                 interface.interrupt_logic.b_interrupt_button_seven = True
