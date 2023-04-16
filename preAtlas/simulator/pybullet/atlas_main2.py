@@ -46,6 +46,8 @@ SUBPATH_CONFIG = {  "ppo":      "ppo.yaml",
                     "simulation": "simulation.yaml"}
 
 scale = 33./13.
+Filter = 0.667
+nominalForward = 0.25
 def train_eval():
     parser = argparse.ArgumentParser()
     parser.add_argument("--nav_policy", type=str, default="bcrnn",
@@ -100,6 +102,7 @@ def visionAngle(_nav_action):
     "agentview_depth": np.transpose(obs["rgbd"][..., 3:], (2, 0, 1)),
     "yaw": np.array([obs["yaw"]])
     }
+    
     action = eval_policy(obs_dict)
     # # # print(action)
     
@@ -117,6 +120,8 @@ def visionAngle(_nav_action):
     errors = np.concatenate(((scale * target_xy - xyz_vel[0:2]), scale * target_yaw -rpy_vel[2]), axis=None)
     turn_angle_radian = np.arctan2(_nav_action[1],_nav_action[0])
     turn_angle = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
+    print(action)
+    filt = action[0]
     return(turn_angle_radian)
     # return {'errors':errors, 'linear':xyz_vel, 'angular':rpy_vel, 'position': xyz_pos, 'orientation': rpy_pos, 'nav_action': _nav_action}
 
@@ -227,7 +232,7 @@ if __name__ == "__main__":
     #     robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
     #     SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
 
-    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [2.0, 0., 0.])
+    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [1.5, 0.5, 0.])
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
         robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
@@ -251,7 +256,7 @@ if __name__ == "__main__":
     ############################################################################################ (create eval_policy)
     eval_policy = train_eval()
     # ######################################################################################### (get obs)
-    _view_agent = {'dist': 0.2,
+    _view_agent = {'dist': 0.2, #originally 0.2
                             'offset': np.array([0.45, 0, 0.]),
                             'roll' : 0. * DEG_TO_RAD,
                             'yaw' : -90. * DEG_TO_RAD,
@@ -304,6 +309,7 @@ if __name__ == "__main__":
             cwd + "/robot_model/atlas/atlas.urdf",
             cwd + "/robot_model/atlas", False, PnCConfig.PRINT_ROBOT_INFO)
     ctrl_arch = AtlasControlArchitecture(_robot)
+    degree_offset = 0
 
     
    
@@ -383,15 +389,21 @@ if __name__ == "__main__":
             turn_angle = np.rad2deg(turn_angle_rad)
             turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
             # WalkingConfig.NOMINAL_TURN_RADIANS = turn_angle_rad
-            DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad
+            DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad/3
+            
+            # DCMTrajectoryManager.nominal_forward_step = (distFilt/Filter)*nominalForward
             print(turn_angle)
-            if(turn_angle<0):
+            if(turn_angle<-8):
                 turn_func.turn_right()
                 interface.interrupt_logic.b_interrupt_button_nine = True
-            if(turn_angle>0):
+                degree_offset += turn_angle
+            if(turn_angle>8):
                 turn_func.turn_left()
                 interface.interrupt_logic.b_interrupt_button_seven = True
             else:
+                filter = (8-np.abs(turn_angle))/8
+                DCMTrajectoryManager.nominal_forward_step = filter*nominalForward
+                turn_func.walk_forward()
                 interface.interrupt_logic.b_interrupt_button_eight = True
          # # Compute Command
         if SimConfig.PRINT_TIME:
