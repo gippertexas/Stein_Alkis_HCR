@@ -46,13 +46,9 @@ SUBPATH_CONFIG = {  "ppo":      "ppo.yaml",
                     "simulation": "simulation.yaml"}
 
 scale = 33./13.
-<<<<<<< Updated upstream
 Filter = 0.667
 nominalForward = 0.25
-=======
 
-
->>>>>>> Stashed changes
 def train_eval():
     parser = argparse.ArgumentParser()
     parser.add_argument("--nav_policy", type=str, default="bcrnn",
@@ -138,7 +134,7 @@ def get_point_cloud(width, height, view_matrix, proj_matrix):
 
 def visionAngle(_nav_action):
     position, orientation = p.getBasePositionAndOrientation(robot)
-    print(position)
+    # print(orientation)
     view_point, _ = p.multiplyTransforms(position, orientation,_view_agent['offset'], [0, 0, 0, 1])
     view_rpy = p.getEulerFromQuaternion(orientation)
     # print('pitch',view_rpy[1])
@@ -193,67 +189,111 @@ def visionAngle(_nav_action):
     rpy_vel = TransformAngularVelocityToLocalFrame(angular_velo, orientation)
     errors = np.concatenate(((scale * target_xy - xyz_vel[0:2]), scale * target_yaw -rpy_vel[2]), axis=None)
     turn_angle_radian = np.arctan2(_nav_action[1],_nav_action[0])
-<<<<<<< Updated upstream
     turn_angle = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
-    print(action)
+    # print(action)
     filt = action[0]
-    return(turn_angle_radian)
-=======
-    turn_angle_degrees = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
+    
 
-    distance_in_front = p.rayTest(position, [2,0,0])
-    left_side = [position[0]+1,1,.5]
-    right_side = [position[0]+1,-1,.5]
+    # create a 4x4 transform matrix that goes from pixel coordinates (and depth values) to world coordinates
+    projMatrix = np.asarray(proj_matrix).reshape([4, 4], order="F")
+    viewMatrix = np.asarray(view_matrix).reshape([4, 4], order="F")
+    tran_pix_world = np.linalg.inv(np.matmul(projMatrix, viewMatrix))
 
-    # print(distance_in_front)
-    imgW = imgWidth
-    imgH = imgHeight
-    # print('height/width',imgH,'/',imgW)
-    depth_img_buffer = np.reshape(depth, [imgW,imgH])
-    # print(depth_img_buffer)
-    pointCloud = np.empty([imgH, imgW, 4])
-    projMatrix = np.array(proj_matrix).reshape([4,4], order = 'F')
-    vieMatrix = np.array(view_matrix).reshape([4,4],order='F')
-    tran_pix_world = np.linalg.inv(np.matmul(projMatrix, vieMatrix))
-    # count_ = 0
-    # y, x = np.mgrid[-1:1:2 / height, -1:1:2 / width]
-    # y *= -1.
-    # x, y, z = x.reshape(-1), y.reshape(-1), depth.reshape(-1)
-    # h = np.ones_like(z)
+    # create a grid with pixel coordinates and depth values
+    y, x = np.mgrid[-1:1:2 / imgHeight, -1:1:2 / imgWidth]
+    y *= -1.
+    x, y, z = x.reshape(-1), y.reshape(-1), depth.reshape(-1)
+    h = np.ones_like(z)
 
-    # pixels1 = np.stack([x, y, z, h], axis=1)
-    # # filter out "infinite" depths
-    # pixels1 = pixels1[z < 0.99]
-    # pixels1[:, 2] = 2 * pixels1[:, 2] - 1
+    pixels = np.stack([x, y, z, h], axis=1)
+    # filter out "infinite" depths
+    # pixels = pixels[z < 0.99]
+    # pixels[:, 2] = 2 * pixels[:, 2] - 1
+    # print('pixels',pixels.shape)
+    # turn pixels to world coordinates
+    points = np.matmul(tran_pix_world, pixels.T).T
+    points /= points[:, 3: 4]
+    points = points[:, :3]
+    # print(len(points))
+    point_list_dist = [np.sqrt((i[0]-position[0])**2+(i[1]-position[1])**2+(i[2]-position[2])**2) for i in points]
+    point_list_angle = [np.arctan((i[1]-position[1])/(i[0]-position[0])) for i in points]
 
-    # # turn pixels to world coordinates
-    # points = np.matmul(tran_pix_world, pixels1.T).T
-    # points /= points[:, 3: 4]
-    # points = points[:, :3]
+    # dist_from_rob = 
+    min_value = min(point_list_dist)
+    min_index = point_list_dist.index(min_value)
+    angle_min_value = point_list_angle[min_index]
+    
+    yaw_pitch_roll = p.getEulerFromQuaternion(orientation)
+    current_yaw = yaw_pitch_roll[2]
+    # if angle_min_value > 0:
+    #     clearance = min_value*np.sin(angle_min_value-current_yaw)
+    # if angle_min_value<0:
 
-    for h in range(imgH):
-        for w in range(imgW):
-            x = (2*w - imgW)/imgW
-            y = -(2*h - imgH)/imgH  # be careful！ deepth and its corresponding position
-            z = 2*depth_img_buffer[w,h] - 1
-            pixPos = np.array([x, y, z, 1])
-            positions = np.matmul(tran_pix_world, pixPos)
+    #     clearance = min_value*np.sin(angle_min_value+current_yaw)
+    clearance = min_value*np.sin(angle_min_value - current_yaw)
+    clearance_angle = angle_min_value - current_yaw
+    print('min value',min_value,'angle min value',angle_min_value,'currentyaw',current_yaw,'angle to clearance',np.rad2deg(angle_min_value-current_yaw))
+    print('clearance',clearance)
+    valueForClearance = .5/min_value
+    if angle_min_value<0:
+        valueForClearance*=(-1)
+    desired_yaw = angle_min_value - np.arcsin(valueForClearance)
+    
+    return(desired_yaw, clearance, clearance_angle)
+    # turn_angle_degrees = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
 
-            pointCloud[h,w,:] = positions / positions[3]
-            # count_+=1
-    distance_list=[5]
-    for i in pointCloud:
-        distance=np.sqrt(i[0][0]**2+i[0][1]**2+i[0][2]**2)
-        if distance<distance_list[0]:
-            distance_list.pop(0)
-            distance_list.append(distance)
+    # distance_in_front = p.rayTest(position, [2,0,0])
+    # left_side = [position[0]+1,1,.5]
+    # right_side = [position[0]+1,-1,.5]
+
+    # # print(distance_in_front)
+    # imgW = imgWidth
+    # imgH = imgHeight
+    # # print('height/width',imgH,'/',imgW)
+    # depth_img_buffer = np.reshape(depth, [imgW,imgH])
+    # # print(depth_img_buffer)
+    # pointCloud = np.empty([imgH, imgW, 4])
+    # projMatrix = np.array(proj_matrix).reshape([4,4], order = 'F')
+    # vieMatrix = np.array(view_matrix).reshape([4,4],order='F')
+    # tran_pix_world = np.linalg.inv(np.matmul(projMatrix, vieMatrix))
+    # # count_ = 0
+    # # y, x = np.mgrid[-1:1:2 / height, -1:1:2 / width]
+    # # y *= -1.
+    # # x, y, z = x.reshape(-1), y.reshape(-1), depth.reshape(-1)
+    # # h = np.ones_like(z)
+
+    # # pixels1 = np.stack([x, y, z, h], axis=1)
+    # # # filter out "infinite" depths
+    # # pixels1 = pixels1[z < 0.99]
+    # # pixels1[:, 2] = 2 * pixels1[:, 2] - 1
+
+    # # # turn pixels to world coordinates
+    # # points = np.matmul(tran_pix_world, pixels1.T).T
+    # # points /= points[:, 3: 4]
+    # # points = points[:, :3]
+
+    # for h in range(imgH):
+    #     for w in range(imgW):
+    #         x = (2*w - imgW)/imgW
+    #         y = -(2*h - imgH)/imgH  # be careful！ deepth and its corresponding position
+    #         z = 2*depth_img_buffer[w,h] - 1
+    #         pixPos = np.array([x, y, z, 1])
+    #         positions = np.matmul(tran_pix_world, pixPos)
+
+    #         pointCloud[h,w,:] = positions / positions[3]
+    #         # count_+=1
+    # distance_list=[5]
+    # for i in pointCloud:
+    #     distance=np.sqrt(i[0][0]**2+i[0][1]**2+i[0][2]**2)
+    #     if distance<distance_list[0]:
+    #         distance_list.pop(0)
+    #         distance_list.append(distance)
             
 
-    # print('pointcloud',pointCloud.shape)
-    # print(distance_list)
-    # print(depth_img_buffer)
-    return(turn_angle_radian, view_matrix, proj_matrix, imgW, imgH)
->>>>>>> Stashed changes
+    # # print('pointcloud',pointCloud.shape)
+    # # print(distance_list)
+    # # print(depth_img_buffer)
+    # return(turn_angle_radian, view_matrix, proj_matrix, imgW, imgH)
     # return {'errors':errors, 'linear':xyz_vel, 'angular':rpy_vel, 'position': xyz_pos, 'orientation': rpy_pos, 'nav_action': _nav_action}
 
 
@@ -363,11 +403,7 @@ if __name__ == "__main__":
     #     robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
     #     SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
 
-<<<<<<< Updated upstream
-    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [1.5, 0.5, 0.])
-=======
-    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [1.0, 0., 0.])
->>>>>>> Stashed changes
+    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [1, -0.1, 0.])
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
         robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
@@ -521,36 +557,31 @@ if __name__ == "__main__":
         # if the state is balance then continue to next command
         if AtlasStateProvider(ctrl_arch)._state == 1:
             turn_angle_rad = visionAngle(_nav_action)[0]
-            view_mat = visionAngle(_nav_action)[1]
-            proj_mat = visionAngle(_nav_action)[2]
-            width = visionAngle(_nav_action)[3]
-            height = visionAngle(_nav_action)[4]
+            pointcloud = visionAngle(_nav_action)[1]
+            # print(pointcloud)
+            # view_mat = visionAngle(_nav_action)[1]
+            # proj_mat = visionAngle(_nav_action)[2]
+            # width = visionAngle(_nav_action)[3]
+            # height = visionAngle(_nav_action)[4]
             turn_angle = np.rad2deg(turn_angle_rad)
             turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
             # WalkingConfig.NOMINAL_TURN_RADIANS = turn_angle_rad
-            DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad/3
-<<<<<<< Updated upstream
+            DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad
             
             # DCMTrajectoryManager.nominal_forward_step = (distFilt/Filter)*nominalForward
-            print(turn_angle)
-            if(turn_angle<-8):
-                turn_func.turn_right()
-                interface.interrupt_logic.b_interrupt_button_nine = True
-                degree_offset += turn_angle
-=======
-            print(turn_angle)
+            print('turn angle in radians',turn_angle_rad)
             # pointCloud = get_point_cloud(width, height, view_mat, proj_mat)
             # print(pointCloud)
-            if(turn_angle<-8):
+            clearance = visionAngle(_nav_action)[1]
+            if(0.0001<clearance<.5):
                 turn_func.turn_right()
                 interface.interrupt_logic.b_interrupt_button_nine = True
->>>>>>> Stashed changes
-            if(turn_angle>8):
+            elif(-0.0001>clearance>-.5):
                 turn_func.turn_left()
                 interface.interrupt_logic.b_interrupt_button_seven = True
             else:
-                filter = (8-np.abs(turn_angle))/8
-                DCMTrajectoryManager.nominal_forward_step = filter*nominalForward
+                # filter = (8-np.abs(turn_angle))/8
+                # DCMTrajectoryManager.nominal_forward_step = filter*nominalForward
                 turn_func.walk_forward()
                 interface.interrupt_logic.b_interrupt_button_eight = True
          # # Compute Command

@@ -219,7 +219,7 @@ class DCMTrajectoryManager(object):
 
     def walk_forward(self):
         self._reset_idx_and_clear_footstep_list()
-        self._populate_walk_forward(3, self.nominal_forward_step)
+        self._populate_walk_forward(2, self.nominal_forward_step)
         self._alternate_leg()
 
     def walk_backward(self):
@@ -237,11 +237,11 @@ class DCMTrajectoryManager(object):
 
     def turn_left(self):
         self._reset_idx_and_clear_footstep_list()
-        self._populate_turn(3, self.nominal_turn_radians)
+        self._populate_turn(1, self.nominal_turn_radians)
 
     def turn_right(self):
         self._reset_idx_and_clear_footstep_list()
-        self._populate_turn(3, self.nominal_turn_radians)
+        self._populate_turn(1, self.nominal_turn_radians)
 
     def _populate_step_in_place(self, num_step, robot_side_first):
         self._update_starting_stance()
