@@ -3,6 +3,11 @@ This project is for the Human Centered Robotics graduate course at UT Austin. Ta
 
 ## Introduction
 We implemented the navigation controller from the PRELUDE project and a point cloud with clearance to avoid still objects in a hallway environment. 
+[![Object Avoidance]]
+(https://youtu.be/XBvdOm2OkDU)
+
+(https://youtu.be/p9jWWEGk2os "Improved to avoid wall")
+(https://youtu.be/AGazXPAaVGA "Improved to avoid wall")
 
 
 ## Setup
