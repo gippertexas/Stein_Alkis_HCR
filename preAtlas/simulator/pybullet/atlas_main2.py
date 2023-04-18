@@ -39,6 +39,7 @@ from util import util
 from util import liegroup
 from pnc.robot_system.pinocchio_robot_system import PinocchioRobotSystem
 from Environment_Setup import createRobot
+# from pointCloud import getRayFromTo
 DEG_TO_RAD = np.pi/180.
 RAD_TO_DEG = 180./np.pi
 SUBPATH_CONFIG = {  "ppo":      "ppo.yaml",
@@ -134,7 +135,6 @@ def get_point_cloud(width, height, view_matrix, proj_matrix):
 
 def visionAngle(_nav_action):
     position, orientation = p.getBasePositionAndOrientation(robot)
-    # print(orientation)
     view_point, _ = p.multiplyTransforms(position, orientation,_view_agent['offset'], [0, 0, 0, 1])
     view_rpy = p.getEulerFromQuaternion(orientation)
     # print('pitch',view_rpy[1])
@@ -158,7 +158,10 @@ def visionAngle(_nav_action):
         viewMatrix=view_matrix,
         shadow=0,
         projectionMatrix=proj_matrix)
-
+    points = get_point_cloud(imgWidth,imgHeight,view_matrix,proj_matrix)
+    points_list = [np.sqrt((i[0]-position[0])**2+(i[1]-position[1])**2+(i[2]-position[2])**2) for i in points]
+    minEuclid = min(points_list)
+    print(minEuclid)
     _pixels = {}
     _pixels['rgb'] = np.array(rgb)[:, :, 2::-1]
     _pixels['depth'] = np.array((1-depth)*255, dtype=np.uint8)
@@ -191,6 +194,7 @@ def visionAngle(_nav_action):
     turn_angle_radian = np.arctan2(_nav_action[1],_nav_action[0])
     turn_angle = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
     # print(action)
+    
     filt = action[0]
     
 
@@ -239,7 +243,7 @@ def visionAngle(_nav_action):
         valueForClearance*=(-1)
     desired_yaw = angle_min_value - np.arcsin(valueForClearance)
     
-    return(desired_yaw, clearance, clearance_angle)
+    return(turn_angle_radian,desired_yaw, clearance, clearance_angle, minEuclid)
     # turn_angle_degrees = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
 
     # distance_in_front = p.rayTest(position, [2,0,0])
@@ -396,14 +400,43 @@ if __name__ == "__main__":
     p.changeVisualShape(planeId, -1, textureUniqueId=p.loadTexture("data1/textures/carpet.png"), rgbaColor=(0.8,0.7,0.8,1.0))
     setup_obstacles = simulator.environments.PerceptionWrapper._generate_obstacle_profiles(p,10,10,10,50,2)
     assets = simulator.environments.PerceptionWrapper._set_world(p,setup_obstacles)
+    ########################challenge1############################
 
     # chairId = p.loadURDF(cwd + "/data1/assets/furnitures/chair_1/model.urdf", [2.5, 0, 0])
     # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     # nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
     #     robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
     #     SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
+    
+    ##///////////////////////////////challenge 2/////////////////////
 
-    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [1, -0.1, 0.])
+    # cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [1.5, 1, 0.])
+    # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    # nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
+    #     robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
+    #     SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
+    
+    # cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/sofa_1/model.urdf", [3.5, -0.5, 0.])
+    # p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    # nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
+    #     robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
+    #     SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
+
+    ##############Challenge3##############################################
+
+    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [1.5, 1, 0.])
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
+        robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
+        SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
+    
+    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_1/model.urdf", [2.5, -1.5, 0.])
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
+        robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
+        SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
+    
+    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/sofa_1/model.urdf", [3.5, 0.25, 0.])
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
         robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
@@ -556,34 +589,64 @@ if __name__ == "__main__":
         #     interface.interrupt_logic.b_interrupt_button_nine = True #turn right
         # if the state is balance then continue to next command
         if AtlasStateProvider(ctrl_arch)._state == 1:
-            turn_angle_rad = visionAngle(_nav_action)[0]
-            pointcloud = visionAngle(_nav_action)[1]
-            # print(pointcloud)
-            # view_mat = visionAngle(_nav_action)[1]
-            # proj_mat = visionAngle(_nav_action)[2]
-            # width = visionAngle(_nav_action)[3]
-            # height = visionAngle(_nav_action)[4]
+            VS = visionAngle(_nav_action)
+            turn_angle_rad = VS[0]
+            dist = VS[4]
+            clearance = VS[2]
+            clearanceAngle = VS[3]
             turn_angle = np.rad2deg(turn_angle_rad)
+            turn_angle_neg = turn_angle
             turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
             # WalkingConfig.NOMINAL_TURN_RADIANS = turn_angle_rad
-            DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad
-            
+            # DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad
+            cont = False
+            print("Distance:", dist)
             # DCMTrajectoryManager.nominal_forward_step = (distFilt/Filter)*nominalForward
-            print('turn angle in radians',turn_angle_rad)
-            # pointCloud = get_point_cloud(width, height, view_mat, proj_mat)
-            # print(pointCloud)
-            clearance = visionAngle(_nav_action)[1]
-            if(0.0001<clearance<.5):
-                turn_func.turn_right()
-                interface.interrupt_logic.b_interrupt_button_nine = True
-            elif(-0.0001>clearance>-.5):
-                turn_func.turn_left()
-                interface.interrupt_logic.b_interrupt_button_seven = True
-            else:
-                # filter = (8-np.abs(turn_angle))/8
-                # DCMTrajectoryManager.nominal_forward_step = filter*nominalForward
-                turn_func.walk_forward()
-                interface.interrupt_logic.b_interrupt_button_eight = True
+            print("Turn Angle", turn_angle)
+            while (cont == False):
+                
+                small = False
+                big = False
+                clear = False
+                walk =False
+                Dist = clearance/np.tan(clearanceAngle)
+                if(-8>turn_angle):
+                    small = True
+                if(8<turn_angle):
+                    big = True
+                if(np.abs(clearance)>1.28):
+                    clear = True
+                if(dist>0.75):
+                    walk = True
+                # if(np.abs(turn_angle_rad) < np.abs(clearanceAngle)):
+                if(small | big):
+                    DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad
+                    turn_func.turn_right()
+                    interface.interrupt_logic.b_interrupt_button_nine = True
+                    cont = True
+                # elif(np.abs(turn_angle)>np.abs(clearanceAngle)): 
+                elif(walk & clear):
+                    # DCMTrajectoryManager.nominal_forward_step = filter*nominalForward
+                    steps = math.ceil((dist-0.75)/0.2)
+                    DCMTrajectoryManager.nominal_forward_step = (dist-0.75)/steps
+                    DCMTrajectoryManager.nominal_forward_number = steps
+                    print("Steps:",steps,"Distance per step:",(dist-0.75)/steps)
+                    turn_func.walk_forward()
+                    interface.interrupt_logic.b_interrupt_button_eight = True
+                    cont = True   
+                elif(np.abs(turn_angle)<1):
+                    steps = math.ceil((Dist-1)/0.2)
+                    DCMTrajectoryManager.nominal_forward_step = (Dist-1)/steps
+                    DCMTrajectoryManager.nominal_forward_number = 1
+                    print("Steps:",1,"Distance per step:",(Dist-1)/steps)
+                    turn_func.walk_forward()
+                    interface.interrupt_logic.b_interrupt_button_eight = True
+                    cont = True
+                else:
+                    DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad
+                    turn_func.turn_right()
+                    interface.interrupt_logic.b_interrupt_button_nine = True
+                    cont = True
          # # Compute Command
         if SimConfig.PRINT_TIME:
             start_time = time.time()
