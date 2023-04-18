@@ -219,7 +219,7 @@ class DCMTrajectoryManager(object):
 
     def walk_forward(self):
         self._reset_idx_and_clear_footstep_list()
-        self._populate_walk_forward(2, self.nominal_forward_step)
+        self._populate_walk_forward(self.nominal_forward_number, self.nominal_forward_step)
         self._alternate_leg()
 
     def walk_backward(self):
@@ -487,6 +487,14 @@ class DCMTrajectoryManager(object):
     @nominal_forward_step.setter
     def nominal_forward_step(self, value):
         self._nominal_forward_step = value
+
+    @property
+    def nominal_forward_number(self):
+        return self._nominal_forward_number
+
+    @nominal_forward_step.setter
+    def nominal_forward_step(self, value):
+        self._nominal_forward_number = value
 
     @property
     def nominal_backward_step(self):

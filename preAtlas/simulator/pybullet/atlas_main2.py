@@ -47,7 +47,7 @@ SUBPATH_CONFIG = {  "ppo":      "ppo.yaml",
 
 scale = 33./13.
 Filter = 0.667
-nominalForward = 0.25
+nominalForward = 0.2
 
 def train_eval():
     parser = argparse.ArgumentParser()
@@ -65,72 +65,6 @@ def train_eval():
     eval_policy = policy_from_checkpoint(ckpt_path=nav_path)[0]
     return eval_policy
 
-def getRayFromTo(mouseX, mouseY):
-  width, height, viewMat, projMat, cameraUp, camForward, horizon, vertical, _, _, dist, camTarget = p.getDebugVisualizerCamera(
-  )
-  camPos = [
-      camTarget[0] - dist * camForward[0], camTarget[1] - dist * camForward[1],
-      camTarget[2] - dist * camForward[2]
-  ]
-  farPlane = 10000
-  rayForward = [(camTarget[0] - camPos[0]), (camTarget[1] - camPos[1]), (camTarget[2] - camPos[2])]
-  lenFwd = math.sqrt(rayForward[0] * rayForward[0] + rayForward[1] * rayForward[1] +
-                     rayForward[2] * rayForward[2])
-  invLen = farPlane * 1. / lenFwd
-  rayForward = [invLen * rayForward[0], invLen * rayForward[1], invLen * rayForward[2]]
-  rayFrom = camPos
-  oneOverWidth = float(1) / float(width)
-  oneOverHeight = float(1) / float(height)
-
-  dHor = [horizon[0] * oneOverWidth, horizon[1] * oneOverWidth, horizon[2] * oneOverWidth]
-  dVer = [vertical[0] * oneOverHeight, vertical[1] * oneOverHeight, vertical[2] * oneOverHeight]
-  rayToCenter = [
-      rayFrom[0] + rayForward[0], rayFrom[1] + rayForward[1], rayFrom[2] + rayForward[2]
-  ]
-  ortho = [
-      -0.5 * horizon[0] + 0.5 * vertical[0] + float(mouseX) * dHor[0] - float(mouseY) * dVer[0],
-      -0.5 * horizon[1] + 0.5 * vertical[1] + float(mouseX) * dHor[1] - float(mouseY) * dVer[1],
-      -0.5 * horizon[2] + 0.5 * vertical[2] + float(mouseX) * dHor[2] - float(mouseY) * dVer[2]
-  ]
-
-  rayTo = [
-      rayFrom[0] + rayForward[0] + ortho[0], rayFrom[1] + rayForward[1] + ortho[1],
-      rayFrom[2] + rayForward[2] + ortho[2]
-  ]
-  lenOrtho = math.sqrt(ortho[0] * ortho[0] + ortho[1] * ortho[1] + ortho[2] * ortho[2])
-  alpha = math.atan(lenOrtho / farPlane)
-  return rayFrom, rayTo, alpha
-
-def get_point_cloud(width, height, view_matrix, proj_matrix):
-    # based on https://stackoverflow.com/questions/59128880/getting-world-coordinates-from-opengl-depth-buffer
-
-    # get a depth image
-    # "infinite" depths will have a value close to 1
-    image_arr = p.getCameraImage(width=width, height=height, viewMatrix=view_matrix, projectionMatrix=proj_matrix)
-    depth = image_arr[3]
-
-    # create a 4x4 transform matrix that goes from pixel coordinates (and depth values) to world coordinates
-    proj_matrix = np.asarray(proj_matrix).reshape([4, 4], order="F")
-    view_matrix = np.asarray(view_matrix).reshape([4, 4], order="F")
-    tran_pix_world = np.linalg.inv(np.matmul(proj_matrix, view_matrix))
-
-    # create a grid with pixel coordinates and depth values
-    y, x = np.mgrid[-1:1:2 / height, -1:1:2 / width]
-    y *= -1.
-    x, y, z = x.reshape(-1), y.reshape(-1), depth.reshape(-1)
-    h = np.ones_like(z)
-
-    pixels1 = np.stack([x, y, z, h], axis=1)
-    # filter out "infinite" depths
-    pixels1 = pixels1[z < 0.99]
-    pixels1[:, 2] = 2 * pixels1[:, 2] - 1
-
-    # turn pixels to world coordinates
-    points = np.matmul(tran_pix_world, pixels1.T).T
-    points /= points[:, 3: 4]
-    points = points[:, :3]
-
-    return points
 
 def visionAngle(_nav_action):
     position, orientation = p.getBasePositionAndOrientation(robot)
@@ -192,8 +126,9 @@ def visionAngle(_nav_action):
     turn_angle = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
     # print(action)
     filt = action[0]
+    print('angle from prelude',turn_angle_radian)
+    pre_ang = turn_angle_radian
     
-
     # create a 4x4 transform matrix that goes from pixel coordinates (and depth values) to world coordinates
     projMatrix = np.asarray(proj_matrix).reshape([4, 4], order="F")
     viewMatrix = np.asarray(view_matrix).reshape([4, 4], order="F")
@@ -214,87 +149,192 @@ def visionAngle(_nav_action):
     points = np.matmul(tran_pix_world, pixels.T).T
     points /= points[:, 3: 4]
     points = points[:, :3]
+    point_list = []
+    for i in points:
+        if i[2]<.5:
+            point_list.append(i)
+    points = point_list
     # print(len(points))
-    point_list_dist = [np.sqrt((i[0]-position[0])**2+(i[1]-position[1])**2+(i[2]-position[2])**2) for i in points]
-    point_list_angle = [np.arctan((i[1]-position[1])/(i[0]-position[0])) for i in points]
-
-    # dist_from_rob = 
-    min_value = min(point_list_dist)
-    min_index = point_list_dist.index(min_value)
-    angle_min_value = point_list_angle[min_index]
-    
     yaw_pitch_roll = p.getEulerFromQuaternion(orientation)
     current_yaw = yaw_pitch_roll[2]
-    # if angle_min_value > 0:
-    #     clearance = min_value*np.sin(angle_min_value-current_yaw)
-    # if angle_min_value<0:
+    point_list_dist = [np.sqrt((i[0]-position[0])**2+(i[1]-position[1])**2+(i[2]-position[2])**2) for i in points]
+    point_list_angle = [np.arctan((i[1]-position[1])/(i[0]-position[0])) for i in points]
+    count_ = 0
+    ob_dic = {}
+    # get obstacle dictionary for points that are less than 1.4m in distance
+    # and clearance is less than .6, dictionary is organized as clearance:[distance to point, yaw angle to point]
+    for i in point_list_dist:
+        if .5< i <2.1:
+            clearance = point_list_dist[count_]*np.sin(point_list_angle[count_] - current_yaw)
+            if abs(clearance)<.75:
+                ob_dic[clearance]=[point_list_dist[count_],point_list_angle[count_] - current_yaw]
+        count_+=1
+    # sort dictionary according to the clearance
+    # from minimum value to highest value
+    # get minimum value and find the desired yaw angle to get away from smallest clearance value
+    # ob_dic = dict(sorted(ob_dic.items(), key=lambda item: abs(item[0])))
+    ob_dic = dict(sorted(ob_dic.items(), key=lambda item: abs(item[1][1]), reverse = True))
+    angle_des = 0
+    turn_cm = "straight"
+    if ob_dic:
+        pt_dist = list(ob_dic.values())[0][0]
+        pt_yaw = list(ob_dic.values())[0][1]
+        pt_clear = list(ob_dic.keys())[0]
+        print('pt distance',pt_dist)
+        angle_des = np.arcsin(.6/pt_dist)-abs(pt_yaw)
+        angle_des = angle_des*1.5
+        if pt_clear<0:
+            angle_des = abs(pre_ang)
+        if pt_clear>0:
+            angle_des =abs(pre_ang)*-1
+        if pt_clear<0:
+            turn_cm = "left"
+        elif pt_clear>0:
+            turn_cm="right"
+        else:
+            turn_cm="straight"
 
-    #     clearance = min_value*np.sin(angle_min_value+current_yaw)
-    clearance = min_value*np.sin(angle_min_value - current_yaw)
-    clearance_angle = angle_min_value - current_yaw
-    print('min value',min_value,'angle min value',angle_min_value,'currentyaw',current_yaw,'angle to clearance',np.rad2deg(angle_min_value-current_yaw))
-    print('clearance',clearance)
-    valueForClearance = .5/min_value
-    if angle_min_value<0:
-        valueForClearance*=(-1)
-    desired_yaw = angle_min_value - np.arcsin(valueForClearance)
+
+    # this stuff was used to learn from mistakes
+    """
+    # point_list_clearance_angle = [i-current_yaw for i in point_list_angle]
+    # point_list_clearance_dist = [point_list_dist[i]*np.sin(point_list_clearance_angle[i]) for i in range(len(point_list_clearance_angle))]
+    # for i in point_list_clearance_dist:
+    # large_clearance_dic = {}
     
-    return(desired_yaw, clearance, clearance_angle)
-    # turn_angle_degrees = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
+    
+    # clearance_dic={}
+    # count_=0
+    # for i in point_list_angle:
+        # clearance = point_list_dist[count_]*np.sin(i - current_yaw)
+        # if abs(clearance)>1:
+    #     clearance = point_list_dist[count_]*np.sin(i - current_yaw)
+    #     # if abs(clearance)
+    #     large_clearance_dic[clearance]=[point_list_dist[count_], i]
+    #     count_+=1
+    # # large_clearance_dic =dict(sorted(large_clearance_dic, key=lambda dict_key: large_clearance_dic[dict_key][1]))
+    # # large_clearance_dic1 = dict(sorted(large_clearance_dic.items(), key=lambda item: abs(item[1][0]), reverse = True))
+    # # print(large_clearance_dic)
+    
+    # # for key, val in large_clearance_dic.items():
+    # large_clearance_dic = dict(sorted(large_clearance_dic.items(), key=lambda item: abs(item[1][0])))
+    # clear_new = dict(sorted(large_clearance_dic.items(), key=lambda item: abs(item[0])))
+    # distance_new = list(clear_new.values())[0][0]
 
-    # distance_in_front = p.rayTest(position, [2,0,0])
-    # left_side = [position[0]+1,1,.5]
-    # right_side = [position[0]+1,-1,.5]
+    # ###########################################
+    # ###########################################
+    # count_=0
+    # clearance_dic1={}
+    # for i in point_list_angle:
+    #     clearance = point_list_dist[count_]*np.sin(i - current_yaw)
+    #     if .00001<abs(clearance)<1:
+    #         clearance_dic[clearance]=[point_list_dist[count_], i]
+    #         # clearance_angle = 
+    #     if abs(clearance)>.6:
+    #         clearance_dic1[clearance]=[point_list_dist[count_], i]
+    #     count_+=1
+    # # print(clearance_dic)
+    # clear_dic={key:val for key, val in clearance_dic.items() if abs(val[1])<.4}
+    # # print(clear_dic)
+    # clear_dic_l = list(clear_dic.keys())
+    # clear_dic = dict(sorted(clear_dic.items(), key=lambda item: abs(item[1][1])))
+    # # clear_dic = 
+    # large_clearance_dic1 = dict(sorted(clearance_dic1.items(), key=lambda item: abs(item[1][0]), reverse = True))
 
-    # # print(distance_in_front)
-    # imgW = imgWidth
-    # imgH = imgHeight
-    # # print('height/width',imgH,'/',imgW)
-    # depth_img_buffer = np.reshape(depth, [imgW,imgH])
-    # # print(depth_img_buffer)
-    # pointCloud = np.empty([imgH, imgW, 4])
-    # projMatrix = np.array(proj_matrix).reshape([4,4], order = 'F')
-    # vieMatrix = np.array(view_matrix).reshape([4,4],order='F')
-    # tran_pix_world = np.linalg.inv(np.matmul(projMatrix, vieMatrix))
-    # # count_ = 0
-    # # y, x = np.mgrid[-1:1:2 / height, -1:1:2 / width]
-    # # y *= -1.
-    # # x, y, z = x.reshape(-1), y.reshape(-1), depth.reshape(-1)
-    # # h = np.ones_like(z)
+    # turn_angle_new = list(large_clearance_dic1.values())[0][1]
+    # distance = list(large_clearance_dic1.values())[0][0]
+    # # distance=list()
+    # clearance_new = list(large_clearance_dic1.keys())[0]
+    # des_clearance_angle=0
+    # clearance_dic = {key:val for key, val in clearance_dic.items() if val[0]<1.4}
+    # clearance_dic = dict(sorted(clearance_dic.items()))
+    # # print(clearance_dic)
+    # key_dic_list = list(clearance_dic.keys())
+    # value_dic_list = list(clearance_dic.values())
+    # if len(key_dic_list)>1:
+    #     if key_dic_list[0]<0 and key_dic_list[len(key_dic_list)-1]<0:
+    #         clearance_value = key_dic_list[len(key_dic_list)-1]
+    #         des_clearance_angle = value_dic_list[len(value_dic_list)-1][1]-current_yaw
+    #     elif key_dic_list[0]>0 and key_dic_list[len(key_dic_list)-1]>0:
+    #         clearance_value = key_dic_list[0]
+    #         des_clearance_angle = value_dic_list[0][1]-current_yaw
+    # # obstacle_dic = {}
+    # # for key, val in large_clearance_dic.items():
+    # #     if abs(val[0])<1:
+    # #         print(val)
+    # #         if abs(val[0])<1.5:
+    # #             print(val)
+    # #             obstacle_dic[key] = val
+    # # print(obstacle_dic)
+    # # distances_obs_dic = list(obstacle_dic.values())
 
-    # # pixels1 = np.stack([x, y, z, h], axis=1)
-    # # # filter out "infinite" depths
-    # # pixels1 = pixels1[z < 0.99]
-    # # pixels1[:, 2] = 2 * pixels1[:, 2] - 1
 
-    # # # turn pixels to world coordinates
-    # # points = np.matmul(tran_pix_world, pixels1.T).T
-    # # points /= points[:, 3: 4]
-    # # points = points[:, :3]
+    # # for key, val in clearance_dic.items():
+    # #      if val[0]<.6:
+    # #           print(val[0])
+    # # for key, val in clearance_dic.items():
+    # #     print(val[0])
+    
+    # clearance_dic = dict(sorted(clearance_dic.items()))
+    # # print(clearance_dic)
+    # # dist_from_rob = 
+    # min_value = min(point_list_dist)
+    # min_index = point_list_dist.index(min_value)
+    # angle_min_value = point_list_angle[min_index]
 
-    # for h in range(imgH):
-    #     for w in range(imgW):
-    #         x = (2*w - imgW)/imgW
-    #         y = -(2*h - imgH)/imgH  # be careful！ deepth and its corresponding position
-    #         z = 2*depth_img_buffer[w,h] - 1
-    #         pixPos = np.array([x, y, z, 1])
-    #         positions = np.matmul(tran_pix_world, pixPos)
+    # # if angle_min_value > 0:
+    # #     clearance = min_value*np.sin(angle_min_value-current_yaw)
+    # # if angle_min_value<0:
 
-    #         pointCloud[h,w,:] = positions / positions[3]
-    #         # count_+=1
-    # distance_list=[5]
-    # for i in pointCloud:
-    #     distance=np.sqrt(i[0][0]**2+i[0][1]**2+i[0][2]**2)
-    #     if distance<distance_list[0]:
-    #         distance_list.pop(0)
-    #         distance_list.append(distance)
-            
+    # #     clearance = min_value*np.sin(angle_min_value+current_yaw)
+    # # clearance = min_value*np.sin(angle_min_value - current_yaw)
+    # clearance_angl = angle_min_value - current_yaw
+    # clearance_value = min_value*np.sin(clearance_angl)
+    # # print('clearance angle',clearance_angle, clearance_value)
+    
+    # desired_angle = np.arcsin(.5/min_value)-abs(clearance_angl)
 
-    # # print('pointcloud',pointCloud.shape)
-    # # print(distance_list)
-    # # print(depth_img_buffer)
-    # return(turn_angle_radian, view_matrix, proj_matrix, imgW, imgH)
-    # return {'errors':errors, 'linear':xyz_vel, 'angular':rpy_vel, 'position': xyz_pos, 'orientation': rpy_pos, 'nav_action': _nav_action}
+    # # print('desired angle',desired_angle,'min value', min_value)
+    # # if desired_angle>.6:
+    # #     desired_angle=.6
+    # # if clearance_value>0:
+    # #     desired_angle*=-1
+         
+    # # print('min value',min_value,'angle min value',angle_min_value,'currentyaw',current_yaw,'angle to clearance',np.rad2deg(angle_min_value-current_yaw))
+    # # print('clearance',clearance)
+    # # valueForClearance = .6/min_value
+    # # if angle_min_value<0:
+    # #     valueForClearance*=(-1)
+    # # desired_yaw = angle_min_value - np.arcsin(valueForClearance)
+    
+    # #     if key_dic_list[0]<0 and key_dic_list[len(key_dic_list)-1]<0:
+    # #         clearance_value = key_dic_list[len(key_dic_list)-1]
+    # #         des_clearance_angle = value_dic_list[len(value_dic_list)-1][1]-current_yaw
+    # #     elif key_dic_list[0]>0 and key_dic_list[len(key_dic_list)-1]>0:
+    # #         clearance_value = key_dic_list[0]
+    # #         des_clearance_angle = value_dic_list[0][1]-current_yaw
+    
+    # # if des_clearance_angle!=0:
+    # #     if clearance_value<0:
+
+    # #         turn_angle_radian=abs(des_clearance_angle)
+    # #     elif clearance_value>0:
+    # #         turn_angle_radian = -1*abs(des_clearance_angle)
+    # # print('turn angle radian',turn_angle_radian, clearance_value)
+    # value_dic_list_big = list(large_clearance_dic1.values())
+    # turn_angle_radian = value_dic_list_big[len(value_dic_list_big)-1][1]
+    # clearances = list(large_clearance_dic.keys())
+    # # print(len(clear_dic_l))
+    # if len(clear_dic_l)>1:
+    #     # print('yes')
+    #     clearance_new=clearance_new
+    # else:
+    #     clearance_new = 0
+        
+    # print('turn angle radian',turn_angle_radian,clearance_value)
+    """
+    print('angle desired',angle_des)
+    return(angle_des, turn_cm)
 
 
 
@@ -403,7 +443,13 @@ if __name__ == "__main__":
     #     robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
     #     SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
 
-    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [1, -0.1, 0.])
+    cabinetId = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [.75, 0.2, 0.])
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
+        robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
+        SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
+    
+    cabinetId2 = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [2, -1.2, 0.])
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
         robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
@@ -557,33 +603,49 @@ if __name__ == "__main__":
         # if the state is balance then continue to next command
         if AtlasStateProvider(ctrl_arch)._state == 1:
             turn_angle_rad = visionAngle(_nav_action)[0]
-            pointcloud = visionAngle(_nav_action)[1]
+            turn_cm = visionAngle(_nav_action)[1]
+            distance = .5
+            steps = math.floor(distance/.2)
+            DCMTrajectoryManager.nominal_forward_step = distance/steps
+            DCMTrajectoryManager.nominal_forward_number=steps
+            # pointcloud = visionAngle(_nav_action)[1]
             # print(pointcloud)
             # view_mat = visionAngle(_nav_action)[1]
             # proj_mat = visionAngle(_nav_action)[2]
             # width = visionAngle(_nav_action)[3]
             # height = visionAngle(_nav_action)[4]
-            turn_angle = np.rad2deg(turn_angle_rad)
-            turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
+            # turn_angle = np.rad2deg(turn_angle_rad)
+            # turn_func = DCMTrajectoryManager(DCMPlanner(),taf_container.com_task,taf_container.pelvis_ori_task,_robot,"l_sole","r_sole")
             # WalkingConfig.NOMINAL_TURN_RADIANS = turn_angle_rad
             DCMTrajectoryManager.nominal_turn_radians = turn_angle_rad
+            # Stand = True
             
             # DCMTrajectoryManager.nominal_forward_step = (distFilt/Filter)*nominalForward
-            print('turn angle in radians',turn_angle_rad)
+            # print('turn angle in radians',turn_angle_rad)
             # pointCloud = get_point_cloud(width, height, view_mat, proj_mat)
             # print(pointCloud)
-            clearance = visionAngle(_nav_action)[1]
-            if(0.0001<clearance<.5):
-                turn_func.turn_right()
+            # clearance_value = visionAngle(_nav_action)[1]
+            # turn_func.turn_right()
+            # interface.interrupt_logic.b_interrupt_button_nine = True
+            if turn_cm == "right":
+                # if turn_angle_rad>0:
+                #     turn_angle_rad*=-1
+                # turn_func.turn_right()
                 interface.interrupt_logic.b_interrupt_button_nine = True
-            elif(-0.0001>clearance>-.5):
-                turn_func.turn_left()
+            elif turn_cm == "left":
+                # print('turn agle in loop',turn_angle_rad)
+                # if turn_angle_rad<0:
+                #     turn_angle_rad*=-1
+                # print('turn agle in loop',turn_angle_rad)
+                # turn_func.turn_left()
                 interface.interrupt_logic.b_interrupt_button_seven = True
-            else:
+                
                 # filter = (8-np.abs(turn_angle))/8
-                # DCMTrajectoryManager.nominal_forward_step = filter*nominalForward
-                turn_func.walk_forward()
+                # DCMTrajectoryManager.nominal_forward_step = nominalForward
+        # turn_func.walk_forward()
+            elif turn_cm == "straight":
                 interface.interrupt_logic.b_interrupt_button_eight = True
+                
          # # Compute Command
         if SimConfig.PRINT_TIME:
             start_time = time.time()
@@ -597,20 +659,7 @@ if __name__ == "__main__":
         # # # Apply Trq
         pybullet_util.set_motor_trq(robot, joint_id, command)
         
-        p.stepSimulation()
-
-        
-
-       
-
-       
-
-
-        
-
-
-
-    
+        p.stepSimulation()    
         t += dt
         # print(t)
         count += 1
