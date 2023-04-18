@@ -8,7 +8,7 @@ Videos on youtube.
 
 [![Watch the video](https://img.youtube.com/vi/XBvdOm2OkDU/maxresdefault.jpg)](https://youtu.be/XBvdOm2OkDU)
 
-[![Watch the video](https://img.youtube.com/vi/p9jWWEGk2osmaxresdefault.jpg)](https://youtu.be/p9jWWEGk2os)
+[![Watch the video](https://img.youtube.com/vi/p9jWWEGk2os/maxresdefault.jpg)](https://youtu.be/p9jWWEGk2os)
 
 [![Watch the video](https://img.youtube.com/vi/AGazXPAaVGA/maxresdefault.jpg)](https://youtu.be/AGazXPAaVGA)
 
