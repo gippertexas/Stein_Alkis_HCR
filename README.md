@@ -8,6 +8,7 @@ We implemented the navigation controller from the PRELUDE project and a point cl
 
 (https://youtu.be/p9jWWEGk2os "Improved to avoid wall")
 (https://youtu.be/AGazXPAaVGA "Improved to avoid wall")
+[![Watch the video](https://img.youtube.com/vi/AGazXPAaVGA/maxresdefault.jpg)](https://youtu.be/AGazXPAaVGA)
 
 
 ## Setup
