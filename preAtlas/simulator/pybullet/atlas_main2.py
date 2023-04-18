@@ -126,7 +126,7 @@ def visionAngle(_nav_action):
     turn_angle = np.rad2deg(np.arctan2(_nav_action[1],_nav_action[0]))
     # print(action)
     filt = action[0]
-    print('angle from prelude',turn_angle_radian)
+    # print('angle from prelude',turn_angle_radian)
     pre_ang = turn_angle_radian
     
     # create a 4x4 transform matrix that goes from pixel coordinates (and depth values) to world coordinates
@@ -154,6 +154,7 @@ def visionAngle(_nav_action):
         if i[2]<.5:
             point_list.append(i)
     points = point_list
+    # print(points)
     # print(len(points))
     yaw_pitch_roll = p.getEulerFromQuaternion(orientation)
     current_yaw = yaw_pitch_roll[2]
@@ -161,40 +162,52 @@ def visionAngle(_nav_action):
     point_list_angle = [np.arctan((i[1]-position[1])/(i[0]-position[0])) for i in points]
     count_ = 0
     ob_dic = {}
+    min_distance = min(point_list_dist)
     # get obstacle dictionary for points that are less than 1.4m in distance
     # and clearance is less than .6, dictionary is organized as clearance:[distance to point, yaw angle to point]
+    x_vals = []
     for i in point_list_dist:
-        if .5< i <2.1:
+        if .5< i < 1.8:
             clearance = point_list_dist[count_]*np.sin(point_list_angle[count_] - current_yaw)
-            if abs(clearance)<.75:
+            x_vals.append(points[count_][1])
+            if abs(clearance)<.7:
                 ob_dic[clearance]=[point_list_dist[count_],point_list_angle[count_] - current_yaw]
         count_+=1
     # sort dictionary according to the clearance
     # from minimum value to highest value
     # get minimum value and find the desired yaw angle to get away from smallest clearance value
-    # ob_dic = dict(sorted(ob_dic.items(), key=lambda item: abs(item[0])))
+    ob_dic_clear = dict(sorted(ob_dic.items(), key=lambda item: abs(item[0])))
     ob_dic = dict(sorted(ob_dic.items(), key=lambda item: abs(item[1][1]), reverse = True))
     angle_des = 0
     turn_cm = "straight"
-    if ob_dic:
-        pt_dist = list(ob_dic.values())[0][0]
-        pt_yaw = list(ob_dic.values())[0][1]
-        pt_clear = list(ob_dic.keys())[0]
-        print('pt distance',pt_dist)
-        angle_des = np.arcsin(.6/pt_dist)-abs(pt_yaw)
-        angle_des = angle_des*1.5
-        if pt_clear<0:
-            angle_des = abs(pre_ang)
-        if pt_clear>0:
-            angle_des =abs(pre_ang)*-1
-        if pt_clear<0:
-            turn_cm = "left"
-        elif pt_clear>0:
-            turn_cm="right"
-        else:
-            turn_cm="straight"
+    neg_x = [i for i in x_vals if i <0]
+    pos_x = [i for i in x_vals if i >0]
+    # pre_ang is from prelude navigation control demand
+    if len(pos_x)<len(neg_x):
+        turn_cm = "left"
+        angle_des = abs(pre_ang)
+    elif len(neg_x)<len(pos_x):
+        turn_cm="right"
+        angle_des =abs(pre_ang)*-1
+    else:
+        turn_cm="straight"
+    
+    # if ob_dic:
+    #     pt_dist = list(ob_dic.values())[0][0]
+    #     pt_yaw = list(ob_dic.values())[0][1]
+    #     pt_clear = list(ob_dic_clear.keys())[0]
+    #     # print('pt distance',pt_dist)
+    #     angle_des = np.arcsin(.65/pt_dist)-abs(pt_yaw)
+    #     angle_des = angle_des*1.5
+        # print('lengths of list neg then pos',len(neg_x),len(pos_x),'\n',neg_x,'\npos',pos_x)
+        # if len(pos_x)<len(neg_x):
+        #     angle_des = abs(pre_ang)
+        # if len(neg_x)<len(pos_x):
+        #     angle_des =abs(pre_ang)*-1
+        
 
-
+        # print('pt clear', pt_clear)
+        
     # this stuff was used to learn from mistakes
     """
     # point_list_clearance_angle = [i-current_yaw for i in point_list_angle]
@@ -333,8 +346,8 @@ def visionAngle(_nav_action):
         
     # print('turn angle radian',turn_angle_radian,clearance_value)
     """
-    print('angle desired',angle_des)
-    return(angle_des, turn_cm)
+    # print('angle desired',angle_des)
+    return(angle_des, turn_cm, min_distance)
 
 
 
@@ -450,6 +463,12 @@ if __name__ == "__main__":
         SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
     
     cabinetId2 = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [2, -1.2, 0.])
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
+        robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
+        SimConfig.INITIAL_QUAT_WORLD_TO_BASEJOINT, SimConfig.PRINT_ROBOT_INFO)
+    
+    cabinetId3 = p.loadURDF(cwd + "/data1/assets/furnitures/cabinet_3/model.urdf", [3, -.75, 0.])
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     nq, nv, na, joint_id, link_id, pos_basejoint_to_basecom, rot_basejoint_to_basecom = pybullet_util.get_robot_config(
         robot, SimConfig.INITIAL_POS_WORLD_TO_BASEJOINT,
@@ -604,10 +623,10 @@ if __name__ == "__main__":
         if AtlasStateProvider(ctrl_arch)._state == 1:
             turn_angle_rad = visionAngle(_nav_action)[0]
             turn_cm = visionAngle(_nav_action)[1]
-            distance = .5
-            steps = math.floor(distance/.2)
-            DCMTrajectoryManager.nominal_forward_step = distance/steps
-            DCMTrajectoryManager.nominal_forward_number=steps
+            distance = visionAngle(_nav_action)[2] # distance to nearest point
+            steps = 2 #math.ceil(.3/.2)
+            DCMTrajectoryManager.nominal_forward_step = .2 # step distance  #(distance-1)/steps
+            DCMTrajectoryManager.nominal_forward_number=2 #steps
             # pointcloud = visionAngle(_nav_action)[1]
             # print(pointcloud)
             # view_mat = visionAngle(_nav_action)[1]
